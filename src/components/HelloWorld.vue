@@ -5,104 +5,81 @@
                 <b-card title="操作台" bg-variant="white" border-variant="light" class="shadow-sm">
                     <el-tabs v-model="activeName">
                         <el-tab-pane label="右键菜单" name="rcm">
-                            <div class="text-left">
-                                <b-button @click="createMenu" variant="primary" size="sm">新增菜单</b-button>
-                            </div>
-                            <el-tree
-                                ref="rcm"
-                                draggable
-                                show-checkbox
-                                node-key="id"
-                                class="mt-2 mb-4"
-                                :data="RCMTree"
-                                :props="defaultProps"
-                                :default-expanded-keys="RCMTreeExpandKeys"
-                                @node-click="handleNodeClick">
-                            </el-tree>
+                            <el-row class="mt-2 mb-4">
+                                <el-col :span="21">
+                                    <el-tree
+                                        :props="tree.props"
+                                        :node-key="tree.id"
+                                        :data="tree.rcm.data"
+                                        :default-expanded-keys="tree.rcm.expandKeys"
+                                        @node-click="handleNodeClick"
+                                        draggable
+                                        show-checkbox
+                                        ref="rcm">
+                                    </el-tree>
+                                </el-col>
+                                <el-col :span="3">
+                                    <div class="text-right">
+                                        <b-button @click="createMenu" variant="primary" size="sm" class="shadow-sm">
+                                            新增菜单
+                                        </b-button>
+                                    </div>
+                                </el-col>
+                            </el-row>
                             <b-button variant="primary" block class="w-100">生成</b-button>
-                            <el-dialog title="新增菜单" :visible.sync="createMenuDialogVisible">
-                                <el-form label-position="right" label-width="80px" :model="currentMenuDrawer.data">
-                                    <el-form-item label="注册表名">
-                                        <el-input v-model="currentMenuDrawer.data.id"></el-input>
-                                    </el-form-item>
-                                    <el-form-item label="菜单名称">
-                                        <el-input v-model="currentMenuDrawer.data.label"></el-input>
-                                    </el-form-item>
-                                    <el-form-item label="程序路径">
-                                        <el-input v-model="currentMenuDrawer.data.path"></el-input>
-                                    </el-form-item>
-                                    <el-form-item label="菜单图标">
-                                        <el-input v-model="currentMenuDrawer.data.icon"></el-input>
-                                    </el-form-item>
-                                    <b-button variant="primary" block class="w-100 mt-5">创建</b-button>
-                                </el-form>
-                                <p>选择</p>
-                                <el-tree
-                                    ref="menuSets"
-                                    draggable
-                                    show-checkbox
-                                    node-key="id"
-                                    class="mt-2 mb-4"
-                                    :data="tree.menuSets.data"
-                                    :default-expanded-keys="tree.menuSets.expandKeys"
-                                    :allow-drag="menuSetsAllowDrag"
-                                    @node-click="menuSetsClick">
-                                </el-tree>
-                            </el-dialog>
                             <a-drawer
+                                v-if="!JW.isEmpty(drawer.rcm.node.data)"
                                 title="菜单设置"
                                 placement="right"
                                 :visible="rcmDrawer.show"
                                 :width="rcmDrawer.width"
-                                @close="onClose"
-                            >
-                                <el-form ref="form" :model="form" label-width="80px">
-                                    <el-form-item label="注册表名">
-                                        <el-input v-model="form.name"></el-input>
+                                @close="onClose">
+                                <el-form v-if="!JW.isEmpty(drawer.rcm.node.data.children)" ref="form" :model="form" label-width="80px">
+                                    <el-form-item v-for="(v, k) in drawer.rcm.rcmKeys" :key="k" :label="copywirting.fields[v].text">
+                                        <el-input v-model="drawer.rcm.node.data[v]"></el-input>
                                     </el-form-item>
-                                    <el-form-item label="菜单名称">
-                                        <el-input v-model="form.name"></el-input>
-                                    </el-form-item>
-                                    <el-form-item label="菜单图标">
-                                        <el-input v-model="form.name"></el-input>
-                                    </el-form-item>
-                                    <el-form-item label="菜单位置">
-                                        <el-select v-model="value5" multiple placeholder="请选择右键菜单的位置" class="w-100">
-                                            <el-option
-                                                v-for="item in options"
-                                                :key="item.value"
-                                                :label="item.label"
-                                                :value="item.value">
-                                            </el-option>
-                                        </el-select>
-                                    </el-form-item>
-                                    <el-form-item label="特殊资源">
-                                        <el-radio-group v-model="form.resource">
-                                        <el-radio label="线上品牌商赞助"></el-radio>
-                                        <el-radio label="线下场地免费"></el-radio>
-                                        </el-radio-group>
-                                    </el-form-item>
+                                    <template v-if="drawer.rcm.node.level === 1">
+                                        <el-form-item label="菜单位置">
+                                            <el-select
+                                                v-model="drawer.rcm.departments"
+                                                multiple
+                                                clearable
+                                                filterable
+                                                class="w-100"
+                                                placeholder="请选择右键菜单的位置"
+                                                @change="departmentSelectChange">
+                                                <el-option-group
+                                                    v-for="(v, k) in rcmDepartment"
+                                                    :key="k"
+                                                    :label="v.name">
+                                                    <el-option
+                                                        v-for="(vv, kk) in v.options"
+                                                        :key="kk"
+                                                        :label="vv.name"
+                                                        :value="vv.val">
+                                                    </el-option>
+                                                </el-option-group>
+                                            </el-select>
+                                        </el-form-item>
+                                        <el-form-item
+                                            v-for="(v, k) in drawer.rcm.departments"
+                                            :key="k"
+                                            :label="'【' + copywirting.departments[v].text + '】按 Shift 键出现'"
+                                            label-width="200">
+                                            <el-radio-group v-model.number="drawer.rcm.extends[v]">
+                                                <el-radio :label="0">否</el-radio>
+                                                <el-radio :label="1">是</el-radio>
+                                            </el-radio-group>
+                                        </el-form-item>
+                                    </template>
                                     <el-form-item>
                                         <el-button type="primary" @click="onSubmit">立即创建</el-button>
-                                        <el-button>取消</el-button>
                                     </el-form-item>
                                 </el-form>
-                                <el-row>
-                                    <el-col :span="24" class="mb-2">
-                                        <strong>注册表名：</strong>
-                                        <span></span>
-                                    </el-col>
-                                    <el-col :span="24" class="mb-2">
-                                        <strong>菜单名称：</strong>
-                                        <span></span>
-                                    </el-col>
-                                    <el-col :span="24" class="mb-2">
-                                        <strong>程序路径：</strong>
-                                        <span></span>
-                                    </el-col>
-                                    <el-col :span="24" class="mb-2">
-                                        <strong>菜单图标：</strong>
-                                        <span></span>
+                                <el-row v-else>
+                                    <el-col v-for="(v, k) in drawer.rcm.menuSetKeys" :key="k" :span="24" class="mb-2">
+                                        <strong>{{ copywirting.fields[v].text }}：</strong>
+                                        <span>{{ drawer.rcm.node.data[v] }}</span>
                                     </el-col>
                                 </el-row>
                             </a-drawer>
@@ -156,17 +133,102 @@
 export default {
     name: 'HelloWorld',
     data () {
+        var copywirting = {
+            fields: {
+                registry_name: {
+                    text: '注册表名'
+                },
+                menu_name: {
+                    text: '菜单名称'
+                },
+                icon: {
+                    text: '菜单图标'
+                },
+                path: {
+                    text: '程序路径'
+                }
+            },
+            departments: {
+                1: {
+                    text: '所有文件'
+                },
+                2: {
+                    text: '文件夹'
+                },
+                3: {
+                    text: '驱动器'
+                },
+                4: {
+                    text: '文件夹和驱动器'
+                },
+                5: {
+                    text: '文件夹背景'
+                },
+                6: {
+                    text: '桌面背景'
+                }
+            }
+        }
         return {
             activeName: 'rcm',
+            copywirting: copywirting,
+            rcmDepartment: [{
+                name: '选中',
+                options: [{
+                    name: copywirting.departments[1].text,
+                    val: 1
+                }, {
+                    name: copywirting.departments[2].text,
+                    val: 2
+                }, {
+                    name: copywirting.departments[3].text,
+                    val: 3
+                }, {
+                    name: copywirting.departments[4].text,
+                    val: 4
+                }]
+            }, {
+                name: '背景',
+                options: [{
+                    name: copywirting.departments[5].text,
+                    val: 5
+                }, {
+                    name: copywirting.departments[6].text,
+                    val: 6
+                }]
+            }],
             tree: {
+                id: 'registry_name',
+                props: {
+                    children: 'children',
+                    label: 'menu_name'
+                },
                 rcm: {
-                    expandKeys: [],
-                    data: []
+                    data: [{
+                        registry_name: 'my-right-click-menu',
+                        menu_name: '我的右键菜单',
+                        icon: 'i am icon',
+                        children: [{
+                            menu_name: '复制目标路径',
+                            registry_name: 'copy-target-path'
+                        }]
+                    }],
+                    expandKeys: ['my-right-click-menu']
                 },
                 menuSets: {
-                    expandKeys: [],
-                    data: []
+                    data: [],
+                    expandKeys: []
                 }
+            },
+            drawer: {
+                rcm: {
+                    node: {},
+                    rcmKeys: ['registry_name', 'menu_name', 'icon'],
+                    menuSetKeys: ['registry_name', 'menu_name', 'path', 'icon'],
+                    departments: [],
+                    extends: {}
+                },
+                menuSets: {}
             },
             currentMenuDrawer: {
                 width: '720',
@@ -179,60 +241,7 @@ export default {
                 show: false,
                 data: {}
             },
-            menuVisible: false,
-            RCMTreeExpandKeys: ['my-right-click-menu'],
-            RCMTree: [{
-                label: '我的右键菜单',
-                id: 'my-right-click-menu',
-                children: [{
-                    label: '右键菜单示例',
-                    id: 'demo',
-                    children: [{
-                        label: '复制目标路径',
-                        setid: 'copy-target-path'
-                    }]
-                }]
-            }, {
-                label: '我的右键菜单',
-                id: 'my-right-click-menu',
-                children: [{
-                    label: '复制目标路径',
-                    setid: 'copy-target-path'
-                }]
-            }],
-            defaultProps: {
-                children: 'children',
-                label: 'label'
-            },
-            visible: false,
-            createMenuDialogVisible: false,
-            options: [{
-                value: '选项1',
-                label: '黄金糕'
-            }, {
-                value: '选项2',
-                label: '双皮奶'
-            }, {
-                value: '选项3',
-                label: '蚵仔煎'
-            }, {
-                value: '选项4',
-                label: '龙须面'
-            }, {
-                value: '选项5',
-                label: '北京烤鸭'
-            }],
-            value5: [],
-            form: {
-                name: '',
-                region: '',
-                date1: '',
-                date2: '',
-                delivery: false,
-                type: [],
-                resource: '',
-                desc: ''
-            }
+            menuVisible: false
         }
     },
     mounted () {
@@ -241,9 +250,6 @@ export default {
             eslint-disable-next-line
             eslint-disable no-undef
         */
-        this.$nextTick(function () {
-            console.log(this)
-        })
     },
     methods: {
         init: function () {
@@ -344,9 +350,29 @@ export default {
             console.log(this.$refs.menuSets.getNode(e.setid))
             this.rcmDrawer.show = true
             node.expanded = true
+            this.drawer.rcm.node = node
+            console.log(this.drawer.rcm.node)
         },
         createMenu: function () {
-            this.createMenuDialogVisible = true
+            this.tree.rcm.data.push({
+                registry_name: '',
+                menu_name: '新的菜单'
+            })
+            console.log(this.tree.rcm.data)
+        },
+        onSubmit: function () {
+            console.log(this.drawer.rcm.node)
+            console.log(this.RCMTree)
+        },
+        departmentSelectChange: function (v) {
+            var data = this.drawer.rcm.extends
+            for (var i in v) {
+                // eslint-disable-next-line
+                if (isEmpty(data[v[i]])) {
+                    // eslint-disable-next-line
+                    Vue.set(this.drawer.rcm.extends, v[i], 0)
+                }
+            }
         }
     }
 }
