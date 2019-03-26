@@ -41,13 +41,13 @@
                                     <template v-if="drawer.rcm.node.level === 1">
                                         <el-form-item label="菜单位置">
                                             <el-select
-                                                v-model="drawer.rcm.departments"
+                                                v-model="drawer.rcm.node.data.departments"
                                                 multiple
                                                 clearable
                                                 filterable
                                                 class="w-100"
                                                 placeholder="请选择右键菜单的位置"
-                                                @change="departmentSelectChange">
+                                                @change="departmentSelectChange($event, drawer.rcm.node.data)">
                                                 <el-option-group
                                                     v-for="(v, k) in rcmDepartment"
                                                     :key="k"
@@ -62,7 +62,7 @@
                                             </el-select>
                                         </el-form-item>
                                         <el-form-item
-                                            v-for="(v, k) in drawer.rcm.departments"
+                                            v-for="(v, k) in drawer.rcm.node.data.departments"
                                             :key="k"
                                             :label="'【' + copywirting.departments[v].text + '】按 Shift 键出现'"
                                             label-width="200">
@@ -347,11 +347,13 @@ export default {
         },
         handleNodeClick: function (e, node, sel) {
             console.log(e, node, sel)
-            console.log(this.$refs.menuSets.getNode(e.setid))
+            this.drawer.rcm.node = node
+            if (node.data.departments === undefined) {
+                // eslint-disable-next-line
+                Vue.set(node.data, 'departments', [])
+            }
             this.rcmDrawer.show = true
             node.expanded = true
-            this.drawer.rcm.node = node
-            console.log(this.drawer.rcm.node)
         },
         createMenu: function () {
             this.tree.rcm.data.push({
@@ -364,7 +366,7 @@ export default {
             console.log(this.drawer.rcm.node)
             console.log(this.RCMTree)
         },
-        departmentSelectChange: function (v) {
+        departmentSelectChange: function (v, node) {
             var data = this.drawer.rcm.extends
             for (var i in v) {
                 // eslint-disable-next-line
