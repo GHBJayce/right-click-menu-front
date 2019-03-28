@@ -29,11 +29,11 @@
                             <b-button variant="primary" block class="w-100">生成</b-button>
                             <a-drawer
                                 v-if="!JW.isEmpty(drawer.rcm.node.data)"
-                                title="菜单设置"
-                                placement="right"
-                                :visible="rcmDrawer.show"
-                                :width="rcmDrawer.width"
-                                @close="onClose">
+                                :title="drawer.rcm.title"
+                                :placement="drawer.rcm.placement"
+                                :visible="drawer.rcm.visible"
+                                :width="drawer.rcm.width"
+                                @close="drawerClose">
                                 <el-form v-if="!JW.isEmpty(drawer.rcm.node.data.children)" ref="form" :model="form" label-width="80px">
                                     <el-form-item v-for="(v, k) in drawer.rcm.rcmKeys" :key="k" :label="copywirting.fields[v].text">
                                         <el-input v-model="drawer.rcm.node.data[v]"></el-input>
@@ -66,7 +66,7 @@
                                             :key="k"
                                             :label="'【' + copywirting.departments[v].text + '】按 Shift 键出现'"
                                             label-width="200">
-                                            <el-radio-group v-model.number="drawer.rcm.extends[v]">
+                                            <el-radio-group v-model.number="drawer.rcm.node.data.extends[v]">
                                                 <el-radio :label="0">否</el-radio>
                                                 <el-radio :label="1">是</el-radio>
                                             </el-radio-group>
@@ -86,37 +86,41 @@
                         </el-tab-pane>
                         <el-tab-pane label="菜单集" name="menuSets">
                             <el-tree
-                                ref="menuSets"
-                                draggable
-                                show-checkbox
-                                node-key="id"
-                                class="mt-2 mb-4"
+                                :props="tree.props"
+                                :node-key="tree.id"
                                 :data="tree.menuSets.data"
                                 :default-expanded-keys="tree.menuSets.expandKeys"
                                 :allow-drag="menuSetsAllowDrag"
-                                @node-click="menuSetsClick">
+                                @node-click="menuSetsClick"
+                                draggable
+                                show-checkbox
+                                ref="menuSets"
+                                class="mt-2 mb-4">
                             </el-tree>
                         </el-tab-pane>
                     </el-tabs>
                     <a-drawer
-                        title="菜单设置"
-                        placement="right"
-                        :visible="currentMenuDrawer.show"
-                        :width="currentMenuDrawer.width"
-                        @close="onClose"
+                        :title="drawer.menuSets.title"
+                        :placement="drawer.menuSets.placement"
+                        :visible="drawer.menuSets.visible"
+                        :width="drawer.menuSets.width"
+                        @close="drawerClose"
                     >
-                        <el-form :label-position="currentMenuDrawer.formLabelPosition" label-width="80px" :model="currentMenuDrawer.data">
+                        <el-form
+                            :label-position="drawer.menuSets.form.label.placement"
+                            :label-width="drawer.menuSets.form.label.width"
+                            :model="drawer.menuSets.node">
                             <el-form-item label="注册表名">
-                                <el-input v-model="currentMenuDrawer.data.id"></el-input>
+                                <el-input v-model="drawer.menuSets.node.registry_name"></el-input>
                             </el-form-item>
                             <el-form-item label="菜单名称">
-                                <el-input v-model="currentMenuDrawer.data.label"></el-input>
+                                <el-input v-model="drawer.menuSets.node.menu_name"></el-input>
                             </el-form-item>
                             <el-form-item label="程序路径">
-                                <el-input v-model="currentMenuDrawer.data.path"></el-input>
+                                <el-input v-model="drawer.menuSets.node.path"></el-input>
                             </el-form-item>
                             <el-form-item label="菜单图标">
-                                <el-input v-model="currentMenuDrawer.data.icon"></el-input>
+                                <el-input v-model="drawer.menuSets.node.icon"></el-input>
                             </el-form-item>
                             <b-button variant="primary" block class="w-100 mt-5">保存</b-button>
                         </el-form>
@@ -133,7 +137,7 @@
 export default {
     name: 'HelloWorld',
     data () {
-        var copywirting = {
+        let copywirting = {
             fields: {
                 registry_name: {
                     text: '注册表名'
@@ -222,26 +226,30 @@ export default {
             },
             drawer: {
                 rcm: {
+                    title: '右键菜单设置',
+                    placement: 'right',
+                    visible: false,
+                    width: 720,
                     node: {},
                     rcmKeys: ['registry_name', 'menu_name', 'icon'],
                     menuSetKeys: ['registry_name', 'menu_name', 'path', 'icon'],
                     departments: [],
                     extends: {}
                 },
-                menuSets: {}
-            },
-            currentMenuDrawer: {
-                width: '720',
-                show: false,
-                formLabelPosition: 'top',
-                data: {}
-            },
-            rcmDrawer: {
-                width: '720',
-                show: false,
-                data: {}
-            },
-            menuVisible: false
+                menuSets: {
+                    title: '菜单设置',
+                    placement: 'right',
+                    visible: false,
+                    width: 720,
+                    form: {
+                        label: {
+                            placement: 'top',
+                            width: '80px'
+                        }
+                    },
+                    node: {}
+                }
+            }
         }
     },
     mounted () {
@@ -253,56 +261,63 @@ export default {
     },
     methods: {
         init: function () {
+            let rightClickMenu = localStorage.rightClickMenu
+
+            if (!isEmpty(rightClickMenu)) {
+                rightClickMenu = JSON.parse(rightClickMenu)
+                this.tree.rcm.data = rightClickMenu.tree.rcm
+            }
+
             this.menuSets()
+            this.beforeLeave()
         },
         officialMenu: function () {
             const data = [{
-                label: '官方菜单',
-                id: 'official',
+                menu_name: '官方菜单',
+                registry_name: 'official',
                 children: [{
-                    label: '实用功能',
-                    id: 'practical-function',
+                    menu_name: '实用功能',
+                    registry_name: 'practical-function',
                     children: [{
-                        label: '复制目标路径',
-                        id: 'copy-target-path',
+                        menu_name: '复制目标路径',
+                        registry_name: 'copy-target-path',
                         path: 'mshta vbscript:clipboarddata.setdata("text","%1")(close)',
                         icon: '%SYSTEMROOT%\\explorer.exe'
                     }]
                 }, {
-                    label: '电源控制',
-                    id: 'power-supply-control',
+                    menu_name: '电源控制',
+                    registry_name: 'power-supply-control',
                     children: [{
-                        label: '锁定',
-                        id: 'lock'
+                        menu_name: '锁定',
+                        registry_name: 'lock'
                     }, {
-                        label: '注销',
-                        id: 'logout'
+                        menu_name: '注销',
+                        registry_name: 'logout'
                     }, {
-                        label: '切换用户',
-                        id: 'switch-user'
+                        menu_name: '切换用户',
+                        registry_name: 'switch-user'
                     }, {
-                        label: '睡眠',
-                        id: 'sleep'
+                        menu_name: '睡眠',
+                        registry_name: 'sleep'
                     }, {
-                        label: '休眠',
-                        id: 'dormancy'
+                        menu_name: '休眠',
+                        registry_name: 'dormancy'
                     }, {
-                        label: '重启',
-                        id: 'reboot'
+                        menu_name: '重启',
+                        registry_name: 'reboot'
                     }, {
-                        label: '关机',
-                        id: 'shutdown'
+                        menu_name: '关机',
+                        registry_name: 'shutdown'
                     }]
                 }]
             }]
 
             function handle (data) {
-                for (var i in data) {
+                for (let i in data) {
                     data[i] = Object.assign({
                         disabled: true,
                         group: 1
                     }, data[i])
-                    // eslint-disable-next-line
                     if (!isEmpty(data[i].children)) {
                         data[i].children = handle(data[i].children)
                     }
@@ -321,8 +336,7 @@ export default {
             this.tree.menuSets.data = this.getMenuSets()
         },
         menuSetsAllowDrag: function (treeNode) {
-            var node = treeNode.data
-            // eslint-disable-next-line
+            let node = treeNode.data
             if (!isEmpty(node.group) && node.group === 1) {
                 return false
             }
@@ -330,29 +344,27 @@ export default {
             return true
         },
         menuSetsClick: function (node) {
-            // eslint-disable-next-line
             if (isEmpty(node.children)) {
-                this.currentMenuDrawer.show = true
-                this.currentMenuDrawer.data = node
+                this.drawer.menuSets.visible = true
+                this.drawer.menuSets.node = node
             }
         },
-        showDrawer: function () {
-            this.visible = true
-        },
-        onClose: function () {
-            this.currentMenuDrawer.show = false
-            this.rcmDrawer.show = false
+        drawerClose: function () {
+            this.drawer.menuSets.visible = false
+            this.drawer.rcm.visible = false
             let keys = this.$refs.menuSets.getCurrentKey()
             console.log(keys)
         },
         handleNodeClick: function (e, node, sel) {
             console.log(e, node, sel)
             this.drawer.rcm.node = node
-            if (node.data.departments === undefined) {
-                // eslint-disable-next-line
+            if (isEmpty(node.data.departments)) {
                 Vue.set(node.data, 'departments', [])
             }
-            this.rcmDrawer.show = true
+            if (isEmpty(node.data.extends)) {
+                Vue.set(node.data, 'extends', {})
+            }
+            this.drawer.rcm.visible = true
             node.expanded = true
         },
         createMenu: function () {
@@ -367,14 +379,36 @@ export default {
             console.log(this.RCMTree)
         },
         departmentSelectChange: function (v, node) {
-            var data = this.drawer.rcm.extends
-            for (var i in v) {
-                // eslint-disable-next-line
-                if (isEmpty(data[v[i]])) {
-                    // eslint-disable-next-line
-                    Vue.set(this.drawer.rcm.extends, v[i], 0)
+            for (let i in v) {
+                if (isEmpty(node.extends[v[i]])) {
+                    Vue.set(node.extends, v[i], 0)
                 }
             }
+        },
+        beforeLeave: function () {
+            let _this = this
+
+            $(window).on('beforeunload', function () {
+                let rightClickMenu = localStorage.rightClickMenu
+
+                if (isEmpty(rightClickMenu)) {
+                    rightClickMenu = {
+                        tree: {
+                            rcm: [],
+                            menuSets: []
+                        }
+                    }
+                } else {
+                    rightClickMenu = JSON.parse(rightClickMenu)
+                }
+
+                rightClickMenu.tree.rcm = _this.tree.rcm.data
+                rightClickMenu.tree.menuSets = _this.tree.menuSets.data.filter(function (val, index) {
+                    return val.registry_name !== 'official'
+                })
+
+                localStorage.rightClickMenu = JSON.stringify(rightClickMenu)
+            })
         }
     }
 }

@@ -95,6 +95,8 @@ module.exports = {
     'element-ui': 'ElementUI',
     'bootstrap-vue': 'BootstrapVue',
     'j-weapons': 'JW',
-    'ant-design-vue': 'Antd'
+    'ant-design-vue': 'Antd',
+    'jquery': 'jquery',
+    '$': 'jquery'
   },
 }
