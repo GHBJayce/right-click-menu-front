@@ -28,26 +28,26 @@
                             </el-row>
                             <b-button variant="primary" block class="w-100">生成</b-button>
                             <a-drawer
-                                v-if="!JW.isEmpty(drawer.rcm.node.data)"
+                                v-if="!JW.isEmpty(drawer.rcm.nodeObj.data)"
                                 :title="drawer.rcm.title"
                                 :placement="drawer.rcm.placement"
                                 :visible="drawer.rcm.visible"
                                 :width="drawer.rcm.width"
                                 @close="drawerClose">
-                                <el-form v-if="!JW.isEmpty(drawer.rcm.node.data.children)" ref="form" :model="form" label-width="80px">
+                                <el-form v-if="!JW.isEmpty(drawer.rcm.nodeObj.data.children)" ref="form" :model="form" label-width="80px">
                                     <el-form-item v-for="(v, k) in drawer.rcm.rcmKeys" :key="k" :label="copywirting.fields[v].text">
-                                        <el-input v-model="drawer.rcm.node.data[v]"></el-input>
+                                        <el-input v-model="drawer.rcm.nodeObj.data[v]"></el-input>
                                     </el-form-item>
-                                    <template v-if="drawer.rcm.node.level === 1">
+                                    <template v-if="drawer.rcm.nodeObj.level === 1">
                                         <el-form-item label="菜单位置">
                                             <el-select
-                                                v-model="drawer.rcm.node.data.departments"
+                                                v-model="drawer.rcm.nodeObj.data.departments"
                                                 multiple
                                                 clearable
                                                 filterable
                                                 class="w-100"
                                                 placeholder="请选择右键菜单的位置"
-                                                @change="departmentSelectChange($event, drawer.rcm.node.data)">
+                                                @change="departmentSelectChange($event, drawer.rcm.nodeObj.data)">
                                                 <el-option-group
                                                     v-for="(v, k) in rcmDepartment"
                                                     :key="k"
@@ -62,11 +62,11 @@
                                             </el-select>
                                         </el-form-item>
                                         <el-form-item
-                                            v-for="(v, k) in drawer.rcm.node.data.departments"
+                                            v-for="(v, k) in drawer.rcm.nodeObj.data.departments"
                                             :key="k"
                                             :label="'【' + copywirting.departments[v].text + '】按 Shift 键出现'"
                                             label-width="200">
-                                            <el-radio-group v-model.number="drawer.rcm.node.data.extends[v]">
+                                            <el-radio-group v-model.number="drawer.rcm.nodeObj.data.extends[v]">
                                                 <el-radio :label="0">否</el-radio>
                                                 <el-radio :label="1">是</el-radio>
                                             </el-radio-group>
@@ -79,7 +79,7 @@
                                 <el-row v-else>
                                     <el-col v-for="(v, k) in drawer.rcm.menuSetKeys" :key="k" :span="24" class="mb-2">
                                         <strong>{{ copywirting.fields[v].text }}：</strong>
-                                        <span>{{ drawer.rcm.node.data[v] }}</span>
+                                        <span>{{ drawer.rcm.tmpData[drawer.rcm.nodeObj.data.registry_name][v] }}</span>
                                     </el-col>
                                 </el-row>
                             </a-drawer>
@@ -110,19 +110,15 @@
                             :label-position="drawer.menuSets.form.label.placement"
                             :label-width="drawer.menuSets.form.label.width"
                             :model="drawer.menuSets.node">
-                            <el-form-item label="注册表名">
-                                <el-input v-model="drawer.menuSets.node.registry_name"></el-input>
+                            <el-form-item
+                                v-for="(v, k) in drawer.menuSets.form.items"
+                                :key="k"
+                                :label="copywirting.fields[v].text">
+                                <el-input
+                                    v-model="drawer.menuSets.node[v]"
+                                    :disabled="drawer.menuSets.node.disabled === true"></el-input>
                             </el-form-item>
-                            <el-form-item label="菜单名称">
-                                <el-input v-model="drawer.menuSets.node.menu_name"></el-input>
-                            </el-form-item>
-                            <el-form-item label="程序路径">
-                                <el-input v-model="drawer.menuSets.node.path"></el-input>
-                            </el-form-item>
-                            <el-form-item label="菜单图标">
-                                <el-input v-model="drawer.menuSets.node.icon"></el-input>
-                            </el-form-item>
-                            <b-button variant="primary" block class="w-100 mt-5">保存</b-button>
+                            <!-- <b-button variant="primary" block class="w-100 mt-5">保存</b-button> -->
                         </el-form>
                     </a-drawer>
                 </b-card>
@@ -230,11 +226,12 @@ export default {
                     placement: 'right',
                     visible: false,
                     width: 720,
-                    node: {},
+                    nodeObj: {},
                     rcmKeys: ['registry_name', 'menu_name', 'icon'],
                     menuSetKeys: ['registry_name', 'menu_name', 'path', 'icon'],
                     departments: [],
-                    extends: {}
+                    extends: {},
+                    tmpData: {}
                 },
                 menuSets: {
                     title: '菜单设置',
@@ -245,7 +242,8 @@ export default {
                         label: {
                             placement: 'top',
                             width: '80px'
-                        }
+                        },
+                        items: ['registry_name', 'menu_name', 'path', 'icon']
                     },
                     node: {}
                 }
@@ -352,20 +350,24 @@ export default {
         drawerClose: function () {
             this.drawer.menuSets.visible = false
             this.drawer.rcm.visible = false
-            let keys = this.$refs.menuSets.getCurrentKey()
-            console.log(keys)
         },
-        handleNodeClick: function (e, node, sel) {
-            console.log(e, node, sel)
-            this.drawer.rcm.node = node
-            if (isEmpty(node.data.departments)) {
-                Vue.set(node.data, 'departments', [])
-            }
-            if (isEmpty(node.data.extends)) {
-                Vue.set(node.data, 'extends', {})
+        handleNodeClick: function (node, nodeObj, treeObj) {
+            this.drawer.rcm.nodeObj = nodeObj
+            if (!isEmpty(nodeObj.data.children)) {
+                if (isEmpty(nodeObj.data.departments)) {
+                    Vue.set(nodeObj.data, 'departments', [])
+                }
+                if (isEmpty(nodeObj.data.extends)) {
+                    Vue.set(nodeObj.data, 'extends', {})
+                }
             }
             this.drawer.rcm.visible = true
-            node.expanded = true
+            nodeObj.expanded = true
+
+            if (isEmpty(node.children)) {
+                let menuSetNodeObj = this.$refs.menuSets.getNode(node.registry_name)
+                this.drawer.rcm.tmpData[node.registry_name] = menuSetNodeObj.data
+            }
         },
         createMenu: function () {
             this.tree.rcm.data.push({
