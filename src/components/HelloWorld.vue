@@ -77,26 +77,71 @@
                                     </el-form-item>
                                 </el-form>
                                 <el-row v-else>
-                                    <el-col v-for="(v, k) in drawer.rcm.menuSetKeys" :key="k" :span="24" class="mb-2">
-                                        <strong>{{ copywirting.fields[v].text }}：</strong>
-                                        <span>{{ drawer.rcm.tmpData[drawer.rcm.nodeObj.data.registry_name][v] }}</span>
+                                    <el-col>
+                                        <el-form
+                                            size="small"
+                                            label-width="82px">
+                                            <el-form-item
+                                                v-for="(v, k) in drawer.rcm.menuSet.editable"
+                                                :key="k"
+                                                :label="copywirting.fields[v].text + '：'">
+                                                <el-input v-model="drawer.rcm.nodeObj.data[v]"></el-input>
+                                            </el-form-item>
+                                        </el-form>
+                                    </el-col>
+                                    <el-col
+                                        v-for="(v, k) in drawer.rcm.menuSet.notEditable"
+                                        :key="k"
+                                        :span="24"
+                                        class="mb-4">
+                                        <span class="mr-2">{{ copywirting.fields[v].text }}：</span>
+                                        <span v-if="!JW.isEmpty(drawer.rcm.nodeObj.data.registry_name) && !JW.isEmpty(drawer.rcm.tmpData[drawer.rcm.nodeObj.data.registry_name])">{{ drawer.rcm.tmpData[drawer.rcm.nodeObj.data.registry_name][v] }}</span>
+                                    </el-col>
+                                    <el-col>
+                                        <b-button
+                                            block
+                                            variant="primary"
+                                            class="w-100 mt-2">更换菜单</b-button>
                                     </el-col>
                                 </el-row>
                             </a-drawer>
                         </el-tab-pane>
                         <el-tab-pane label="菜单集" name="menuSets">
-                            <el-tree
-                                :props="tree.props"
-                                :node-key="tree.id"
-                                :data="tree.menuSets.data"
-                                :default-expanded-keys="tree.menuSets.expandKeys"
-                                :allow-drag="menuSetsAllowDrag"
-                                @node-click="menuSetsClick"
-                                draggable
-                                show-checkbox
-                                ref="menuSets"
-                                class="mt-2 mb-4">
-                            </el-tree>
+                            <el-row class="mt-2 mb-4">
+                                <el-col :span="21">
+                                    <el-tree
+                                        :props="tree.props"
+                                        :node-key="tree.id"
+                                        :data="tree.menuSets.data"
+                                        :default-expanded-keys="tree.menuSets.expandKeys"
+                                        :allow-drag="menuSetsAllowDrag"
+                                        :allow-drop="menuSetAllowDrop"
+                                        @node-click="menuSetsClick"
+                                        @node-drop="menuSetNodeDrop"
+                                        draggable
+                                        show-checkbox
+                                        ref="menuSets">
+                                        <span slot-scope="{ node, data }">
+                                            <span>{{ node.label }}</span>
+                                            <span v-if="!JW.isEmpty(data.labels)">
+                                                <b-badge
+                                                    v-for="(v, k) in data.labels"
+                                                    :key="k"
+                                                    variant="primary"
+                                                    class="ml-1"
+                                                    :title="title">{{ v.text }}</b-badge>
+                                            </span>
+                                        </span>
+                                    </el-tree>
+                                </el-col>
+                                <el-col :span="3">
+                                    <div class="text-right">
+                                        <b-button @click="createMenuSet" variant="primary" size="sm" class="shadow-sm">
+                                            新增菜单
+                                        </b-button>
+                                    </div>
+                                </el-col>
+                            </el-row>
                         </el-tab-pane>
                     </el-tabs>
                     <a-drawer
@@ -106,19 +151,27 @@
                         :width="drawer.menuSets.width"
                         @close="drawerClose"
                     >
+                        <el-alert
+                            show-icon
+                            title="注册表名必须是唯一的"
+                            type="warning"
+                            class="mb-3">
+                        </el-alert>
                         <el-form
+                            :ref="refs.form.menuSet"
                             :label-position="drawer.menuSets.form.label.placement"
                             :label-width="drawer.menuSets.form.label.width"
-                            :model="drawer.menuSets.node">
+                            :model="drawer.menuSets.node"
+                            :rules="formRules">
                             <el-form-item
                                 v-for="(v, k) in drawer.menuSets.form.items"
                                 :key="k"
-                                :label="copywirting.fields[v].text">
+                                :label="copywirting.fields[v].text"
+                                :prop="v">
                                 <el-input
                                     v-model="drawer.menuSets.node[v]"
                                     :disabled="drawer.menuSets.node.disabled === true"></el-input>
                             </el-form-item>
-                            <!-- <b-button variant="primary" block class="w-100 mt-5">保存</b-button> -->
                         </el-form>
                     </a-drawer>
                 </b-card>
@@ -169,6 +222,32 @@ export default {
                 }
             }
         }
+        let rules = {
+            registryName: (rule, value, callback) => {
+                let text = copywirting.fields.registry_name.text
+                if (isEmpty(value)) {
+                    callback(new Error(text + '不能为空！'))
+                }
+
+                let menuSetsTree = this.$refs.menuSets
+                let existNode = menuSetsTree.getNode(value)
+                // todolist 注册表名的唯一性需要另找解决方法
+                console.log(existNode)
+                // if (!isEmpty(existNode)) {
+                //     callback(new Error('该' + text + '已存在！'))
+                // }
+
+                callback()
+            },
+            menuName: (rule, value, callback) => {
+                let text = copywirting.fields.menu_name.text
+                if (isEmpty(value)) {
+                    callback(new Error(text + '不能为空！'))
+                }
+
+                callback()
+            }
+        }
         return {
             activeName: 'rcm',
             copywirting: copywirting,
@@ -217,7 +296,7 @@ export default {
                 },
                 menuSets: {
                     data: [],
-                    expandKeys: []
+                    expandKeys: ['practical-function', 'power-supply-control', 'hashtab-Get-FileHash', 'hashtab-certutil']
                 }
             },
             drawer: {
@@ -228,7 +307,10 @@ export default {
                     width: 720,
                     nodeObj: {},
                     rcmKeys: ['registry_name', 'menu_name', 'icon'],
-                    menuSetKeys: ['registry_name', 'menu_name', 'path', 'icon'],
+                    menuSet: {
+                        editable: ['menu_name'],
+                        notEditable: ['registry_name', 'path', 'icon']
+                    },
                     departments: [],
                     extends: {},
                     tmpData: {}
@@ -247,6 +329,21 @@ export default {
                     },
                     node: {}
                 }
+            },
+            formRules: {
+                registry_name: [{
+                    validator: rules.registryName,
+                    trigger: 'blur'
+                }],
+                menu_name: [{
+                    validator: rules.menuName,
+                    trigger: 'blur'
+                }]
+            },
+            refs: {
+                form: {
+                    menuSet: 'drawerMenuSetForm'
+                }
             }
         }
     },
@@ -259,14 +356,14 @@ export default {
     },
     methods: {
         init: function () {
+            this.menuSets()
             let rightClickMenu = localStorage.rightClickMenu
 
             if (!isEmpty(rightClickMenu)) {
                 rightClickMenu = JSON.parse(rightClickMenu)
                 this.tree.rcm.data = rightClickMenu.tree.rcm
+                this.tree.menuSets.data = this.tree.menuSets.data.concat(rightClickMenu.tree.menuSets)
             }
-
-            this.menuSets()
             this.beforeLeave()
         },
         officialMenu: function () {
@@ -287,25 +384,117 @@ export default {
                     registry_name: 'power-supply-control',
                     children: [{
                         menu_name: '锁定',
-                        registry_name: 'lock'
+                        registry_name: 'lock',
+                        path: 'Rundll32 User32.dll,LockWorkStation',
+                        icon: ''
                     }, {
                         menu_name: '注销',
-                        registry_name: 'logout'
+                        registry_name: 'logout',
+                        path: 'Shutdown -l',
+                        icon: ''
                     }, {
                         menu_name: '切换用户',
-                        registry_name: 'switch-user'
+                        registry_name: 'switch-user',
+                        path: 'tsdiscon.exe',
+                        icon: ''
                     }, {
                         menu_name: '睡眠',
-                        registry_name: 'sleep'
+                        registry_name: 'sleep',
+                        path: 'rundll32.exe powrprof.dll,SetSuspendState Sleep',
+                        icon: ''
                     }, {
                         menu_name: '休眠',
-                        registry_name: 'dormancy'
+                        registry_name: 'dormancy',
+                        path: 'Shutdown -h',
+                        icon: ''
                     }, {
                         menu_name: '重启',
-                        registry_name: 'reboot'
+                        registry_name: 'reboot',
+                        path: 'Shutdown -r -f -t 00',
+                        icon: ''
                     }, {
                         menu_name: '关机',
-                        registry_name: 'shutdown'
+                        registry_name: 'shutdown',
+                        path: 'Shutdown -s -f -t 00',
+                        icon: ''
+                    }]
+                }, {
+                    labels: [{
+                        text: 'PowerShell'
+                    }, {
+                        text: 'Get-FileHash'
+                    }],
+                    menu_name: '哈希校验',
+                    registry_name: 'hashtab-Get-FileHash',
+                    children: [{
+                        menu_name: 'MD5',
+                        registry_name: 'MD5',
+                        path: 'PowerShell Get-FileHash -Algorithm MD5 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'SHA1',
+                        registry_name: 'SHA1',
+                        path: 'PowerShell Get-FileHash -Algorithm SHA1 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'SHA256',
+                        registry_name: 'SHA256',
+                        path: 'PowerShell Get-FileHash -Algorithm SHA256 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'SHA384',
+                        registry_name: 'SHA384',
+                        path: 'PowerShell Get-FileHash -Algorithm SHA384 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'SHA512',
+                        registry_name: 'SHA512',
+                        path: 'PowerShell Get-FileHash -Algorithm SHA512 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'MACTripleDES',
+                        registry_name: 'MACTripleDES',
+                        path: 'PowerShell Get-FileHash -Algorithm MACTripleDES "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'RIPEMD160',
+                        registry_name: 'RIPEMD160',
+                        path: 'PowerShell Get-FileHash -Algorithm RIPEMD160 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }]
+                }, {
+                    labels: [{
+                        text: 'cmd'
+                    }, {
+                        text: 'certutil'
+                    }],
+                    menu_name: '哈希校验',
+                    registry_name: 'hashtab-certutil',
+                    children: [{
+                        menu_name: 'MD5',
+                        registry_name: 'MD5',
+                        path: 'cmd certutil -hashfile "%1" MD5 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'SHA1',
+                        registry_name: 'SHA1',
+                        path: 'cmd certutil -hashfile "%1" SHA1 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'SHA256',
+                        registry_name: 'SHA256',
+                        path: 'cmd certutil -hashfile "%1" SHA256 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'SHA384',
+                        registry_name: 'SHA384',
+                        path: 'cmd certutil -hashfile "%1" SHA384 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
+                    }, {
+                        menu_name: 'SHA512',
+                        registry_name: 'SHA512',
+                        path: 'cmd certutil -hashfile "%1" SHA512 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        icon: ''
                     }]
                 }]
             }]
@@ -330,7 +519,6 @@ export default {
             return this.officialMenu()
         },
         menuSets: function () {
-            this.tree.menuSets.expandKeys = ['practical-function', 'power-supply-control']
             this.tree.menuSets.data = this.getMenuSets()
         },
         menuSetsAllowDrag: function (treeNode) {
@@ -348,7 +536,17 @@ export default {
             }
         },
         drawerClose: function () {
-            this.drawer.menuSets.visible = false
+            let _this = this
+            if (!isEmpty(this.$refs[this.refs.form.menuSet])) {
+                this.$refs[this.refs.form.menuSet].validate(function (valid) {
+                    if (valid) {
+                        _this.drawer.menuSets.visible = false
+                    } else {
+                        _this.$message.warning('必须填写正确才能下一步操作')
+                        return false
+                    }
+                })
+            }
             this.drawer.rcm.visible = false
         },
         handleNodeClick: function (node, nodeObj, treeObj) {
@@ -364,7 +562,7 @@ export default {
             this.drawer.rcm.visible = true
             nodeObj.expanded = true
 
-            if (isEmpty(node.children)) {
+            if (isEmpty(node.children) && !isEmpty(node.registry_name)) {
                 let menuSetNodeObj = this.$refs.menuSets.getNode(node.registry_name)
                 this.drawer.rcm.tmpData[node.registry_name] = menuSetNodeObj.data
             }
@@ -374,7 +572,6 @@ export default {
                 registry_name: '',
                 menu_name: '新的菜单'
             })
-            console.log(this.tree.rcm.data)
         },
         onSubmit: function () {
             console.log(this.drawer.rcm.node)
@@ -411,6 +608,41 @@ export default {
 
                 localStorage.rightClickMenu = JSON.stringify(rightClickMenu)
             })
+        },
+        createMenuSet: function () {
+            this.tree.menuSets.data.push({
+                registry_name: '',
+                menu_name: '新的菜单集'
+            })
+        },
+        menuSetNodeDrop: function (before, after, inner, event) {
+            let nodeObj = this.$refs.menuSets.getNode(before.data)
+            if (isEmpty(nodeObj.data.children)) {
+                Vue.set(nodeObj.data, 'path', '')
+                Vue.set(nodeObj.data, 'icon', '')
+                Vue.delete(nodeObj.data, 'children')
+            } else {
+                Vue.delete(nodeObj.data, 'path')
+                Vue.delete(nodeObj.data, 'icon')
+            }
+            if (isEmpty(after.data.children)) {
+                Vue.set(after.data, 'path', '')
+                Vue.set(after.data, 'icon', '')
+                Vue.delete(after.data, 'children')
+            } else {
+                Vue.delete(after.data, 'path')
+                Vue.delete(after.data, 'icon')
+            }
+        },
+        menuSetAllowDrop: function (node, dropNode, type) {
+            if (dropNode.data.group === 1) {
+                return false
+            }
+
+            return true
+        },
+        menuSetDataChange: function (val) {
+            console.log(val)
         }
     }
 }
