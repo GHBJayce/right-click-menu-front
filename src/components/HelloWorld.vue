@@ -151,17 +151,11 @@
                         :width="drawer.menuSets.width"
                         @close="drawerClose"
                     >
-                        <el-alert
-                            show-icon
-                            title="注册表名必须是唯一的"
-                            type="warning"
-                            class="mb-3">
-                        </el-alert>
                         <el-form
                             :ref="refs.form.menuSet"
                             :label-position="drawer.menuSets.form.label.placement"
                             :label-width="drawer.menuSets.form.label.width"
-                            :model="drawer.menuSets.node"
+                            :model="drawer.menuSets.form.data"
                             :rules="formRules">
                             <el-form-item
                                 v-for="(v, k) in drawer.menuSets.form.items"
@@ -169,9 +163,14 @@
                                 :label="copywirting.fields[v].text"
                                 :prop="v">
                                 <el-input
-                                    v-model="drawer.menuSets.node[v]"
-                                    :disabled="drawer.menuSets.node.disabled === true"></el-input>
+                                    v-model="drawer.menuSets.form.data[v]"
+                                    :disabled="drawer.menuSets.node.disabled === true"
+                                    @blur="menuSetBlur(drawer.menuSets.form.data, v)"></el-input>
                             </el-form-item>
+                            <b-button
+                                @click="menuSetSubmit(drawer.menuSets.node)"
+                                variant="primary"
+                                class="w-100">保存</b-button>
                         </el-form>
                     </a-drawer>
                 </b-card>
@@ -232,10 +231,9 @@ export default {
                 let menuSetsTree = this.$refs.menuSets
                 let existNode = menuSetsTree.getNode(value)
                 // todolist 注册表名的唯一性需要另找解决方法
-                console.log(existNode)
-                // if (!isEmpty(existNode)) {
-                //     callback(new Error('该' + text + '已存在！'))
-                // }
+                if (!isEmpty(existNode)) {
+                    callback(new Error('该' + text + '已存在！'))
+                }
 
                 callback()
             },
@@ -321,6 +319,7 @@ export default {
                     visible: false,
                     width: 720,
                     form: {
+                        data: {},
                         label: {
                             placement: 'top',
                             width: '80px'
@@ -344,7 +343,8 @@ export default {
                 form: {
                     menuSet: 'drawerMenuSetForm'
                 }
-            }
+            },
+            registrysName: []
         }
     },
     mounted () {
@@ -472,27 +472,27 @@ export default {
                     registry_name: 'hashtab-certutil',
                     children: [{
                         menu_name: 'MD5',
-                        registry_name: 'MD5',
+                        registry_name: 'certutil-MD5',
                         path: 'cmd certutil -hashfile "%1" MD5 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA1',
-                        registry_name: 'SHA1',
+                        registry_name: 'certutil-SHA1',
                         path: 'cmd certutil -hashfile "%1" SHA1 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA256',
-                        registry_name: 'SHA256',
+                        registry_name: 'certutil-SHA256',
                         path: 'cmd certutil -hashfile "%1" SHA256 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA384',
-                        registry_name: 'SHA384',
+                        registry_name: 'certutil-SHA384',
                         path: 'cmd certutil -hashfile "%1" SHA384 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA512',
-                        registry_name: 'SHA512',
+                        registry_name: 'certutil-SHA512',
                         path: 'cmd certutil -hashfile "%1" SHA512 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }]
@@ -533,20 +533,12 @@ export default {
             if (isEmpty(node.children)) {
                 this.drawer.menuSets.visible = true
                 this.drawer.menuSets.node = node
+                // eslint-disable-next-line
+                this.drawer.menuSets.form.data = node
             }
         },
         drawerClose: function () {
-            let _this = this
-            if (!isEmpty(this.$refs[this.refs.form.menuSet])) {
-                this.$refs[this.refs.form.menuSet].validate(function (valid) {
-                    if (valid) {
-                        _this.drawer.menuSets.visible = false
-                    } else {
-                        _this.$message.warning('必须填写正确才能下一步操作')
-                        return false
-                    }
-                })
-            }
+            this.drawer.menuSets.visible = false
             this.drawer.rcm.visible = false
         },
         handleNodeClick: function (node, nodeObj, treeObj) {
@@ -641,8 +633,25 @@ export default {
 
             return true
         },
-        menuSetDataChange: function (val) {
-            console.log(val)
+        menuSetBlur: function (data, key) {
+            if (key === 'registry_name') {
+                data[key] = data[key].toLocaleLowerCase()
+            }
+        },
+        // 需要解决：若即时存储，需要解决不依靠点击保存按钮，能够验证注册表名的唯一性；若依靠保存按钮，需要解决，在验证数据正确性后，将编辑的数据同步到当前节点数据上
+        menuSetSubmit: function (node) {
+            let _this = this
+            if (!isEmpty(this.$refs[this.refs.form.menuSet])) {
+                this.$refs[this.refs.form.menuSet].validate(function (valid) {
+                    if (valid) {
+                        // node = _this.drawer.menuSets.form.data
+                        console.log(_this.drawer.menuSets.node, _this.tree.menuSets)
+                    } else {
+                        _this.$message.warning('必须填写正确才能下一步操作')
+                        return false
+                    }
+                })
+            }
         }
     }
 }
