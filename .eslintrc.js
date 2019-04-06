@@ -11,7 +11,8 @@ module.exports = {
   globals: {
     '$': false,
     'isEmpty': false,
-    'Vue': false
+    'Vue': false,
+    'md5': false
   },
   extends: [
     // https://github.com/vuejs/eslint-plugin-vue#priority-a-essential-error-prevention
