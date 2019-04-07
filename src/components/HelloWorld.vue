@@ -53,7 +53,11 @@
                                     :model="drawer.rcm.nodeObj.data"
                                     :rules="formRules.rcm"
                                     label-width="80px">
-                                    <el-form-item v-for="(v, k) in drawer.rcm.rcmKeys" :key="k" :label="copywirting.fields[v].text">
+                                    <el-form-item
+                                        v-for="(v, k) in drawer.rcm.rcmKeys"
+                                        :label="copywirting.fields[v].text"
+                                        :prop="v"
+                                        :key="k">
                                         <el-input v-model="drawer.rcm.nodeObj.data[v]"></el-input>
                                     </el-form-item>
                                     <template v-if="drawer.rcm.nodeObj.level === 1">
@@ -99,7 +103,8 @@
                                             <el-form-item
                                                 v-for="(v, k) in drawer.rcm.menuSet.editable"
                                                 :key="k"
-                                                :label="copywirting.fields[v].text + '：'">
+                                                :label="copywirting.fields[v].text + '：'"
+                                                class="mb-4">
                                                 <el-input v-model="drawer.rcm.nodeObj.data[v]"></el-input>
                                             </el-form-item>
                                         </el-form>
@@ -109,15 +114,67 @@
                                         :key="k"
                                         :span="24"
                                         class="mb-4">
-                                        <span class="mr-2">{{ copywirting.fields[v].text }}：</span>
-                                        <span v-if="!JW.isEmpty(drawer.rcm.nodeObj.data.registry_name) && !JW.isEmpty(drawer.rcm.tmpData[drawer.rcm.nodeObj.data.registry_name])">{{ drawer.rcm.tmpData[drawer.rcm.nodeObj.data.registry_name][v] }}</span>
+                                        <div class="mr-2 mb-2 float-left">{{ copywirting.fields[v].text }}：</div>
+                                        <div v-if="!JW.isEmpty(drawer.rcm.nodeObj.data.origin_registry_name) && !JW.isEmpty(drawer.rcm.tmpData[drawer.rcm.nodeObj.data.origin_registry_name])">{{ drawer.rcm.tmpData[drawer.rcm.nodeObj.data.origin_registry_name][v] }}</div>
                                     </el-col>
                                     <el-col>
                                         <b-button
+                                            @click="toggleMenuSet"
                                             block
                                             variant="primary"
                                             class="w-100 mt-2">更换菜单</b-button>
                                     </el-col>
+                                    <a-drawer
+                                        :title="drawer.toggleMenuSet.title"
+                                        :placement="drawer.toggleMenuSet.placement"
+                                        :visible="drawer.toggleMenuSet.visible"
+                                        :width="drawer.toggleMenuSet.width"
+                                        @close="toggleMenuSetClose">
+                                        <el-tree
+                                            v-if="drawer.toggleMenuSet.visible"
+                                            :props="tree.props"
+                                            :node-key="tree.id"
+                                            :data="tree.menuSets.data"
+                                            :default-expanded-keys="tree.menuSets.expandKeys"
+                                            @node-click="toggleMenuSetDetailClick"
+                                            :ref="refs.tree.toggleMenuSet">
+                                            <span slot-scope="{ node, data }">
+                                                <span>{{ node.label }}</span>
+                                                <span v-if="!JW.isEmpty(data.labels)">
+                                                    <b-badge
+                                                        v-for="(v, k) in data.labels"
+                                                        :key="k"
+                                                        variant="primary"
+                                                        class="ml-1"
+                                                        :title="title">{{ v.text }}</b-badge>
+                                                </span>
+                                            </span>
+                                        </el-tree>
+                                        <a-drawer
+                                            :title="drawer.toggleMenuSetDetail.title"
+                                            :placement="drawer.toggleMenuSetDetail.placement"
+                                            :visible="drawer.toggleMenuSetDetail.visible"
+                                            :width="drawer.toggleMenuSetDetail.width"
+                                            @close="toggleMenuSetDetailClose">
+                                            <el-row>
+                                                <el-col
+                                                    v-for="(v, k) in drawer.menuSets.form.items"
+                                                    :key="k"
+                                                    :span="24"
+                                                    class="mb-4">
+                                                    <div class="mb-2 float-left">{{ copywirting.fields[v].text }}：</div>
+                                                    <div>{{ drawer.toggleMenuSetDetail.node[v] }}</div>
+                                                </el-col>
+                                                <el-col>
+                                                    <b-button
+                                                        @click="applyMenuSet"
+                                                        variant="primary"
+                                                        class="w-100"
+                                                        block>选用</b-button>
+                                                </el-col>
+                                            </el-row>
+                                        </a-drawer>
+                                    </a-drawer>
                                 </el-row>
                             </a-drawer>
                         </el-tab-pane>
@@ -131,12 +188,12 @@
                                         :default-expanded-keys="tree.menuSets.expandKeys"
                                         :allow-drag="menuSetsAllowDrag"
                                         :allow-drop="menuSetAllowDrop"
+                                        :ref="refs.tree.menuSets"
                                         @node-click="menuSetsClick"
                                         @node-drop="menuSetNodeDrop"
                                         @check-change="menuSetCheckChange"
                                         draggable
-                                        show-checkbox
-                                        ref="menuSets">
+                                        show-checkbox>
                                         <span slot-scope="{ node, data }">
                                             <span>{{ node.label }}</span>
                                             <span v-if="!JW.isEmpty(data.labels)">
@@ -285,9 +342,9 @@ export default {
                     callback(new Error(text + '不能为空！'))
                 }
 
-                if (this.drawer.menuSets.originNode.registry_name !== value) {
-                    let menuSetsTree = this.$refs.menuSets
-                    let existNode = menuSetsTree.getNode(value)
+                if (this.drawer.rcm.originNode.registry_name !== value) {
+                    let rcmTree = this.$refs.rcm
+                    let existNode = rcmTree.getNode(value)
                     if (!isEmpty(existNode)) {
                         callback(new Error('该' + text + '已存在！'))
                     }
@@ -336,7 +393,8 @@ export default {
                         icon: 'i am icon',
                         children: [{
                             menu_name: '复制目标路径',
-                            registry_name: 'copy-target-path'
+                            registry_name: 'copy-target-path',
+                            origin_registry_name: 'copy-target-path'
                         }]
                     }],
                     expandKeys: ['my-right-click-menu']
@@ -360,7 +418,8 @@ export default {
                     },
                     departments: [],
                     extends: {},
-                    tmpData: {}
+                    tmpData: {},
+                    originNode: {}
                 },
                 menuSets: {
                     title: '菜单设置',
@@ -376,6 +435,20 @@ export default {
                     },
                     node: {},
                     originNode: {}
+                },
+                toggleMenuSet: {
+                    title: '更换菜单',
+                    placement: 'right',
+                    visible: false,
+                    width: 500,
+                    node: {}
+                },
+                toggleMenuSetDetail: {
+                    title: '菜单信息',
+                    placement: 'right',
+                    visible: false,
+                    width: 500,
+                    node: {}
                 }
             },
             formRules: {
@@ -405,6 +478,11 @@ export default {
                 }
             },
             refs: {
+                tree: {
+                    rcm: 'rcm',
+                    menuSets: 'menuSets',
+                    toggleMenuSet: 'toggleMenuSet'
+                },
                 form: {
                     rcm: 'drawerRcmForm',
                     menuSet: 'drawerMenuSetForm'
@@ -430,7 +508,9 @@ export default {
 
             if (!isEmpty(rightClickMenu)) {
                 rightClickMenu = JSON.parse(rightClickMenu)
-                this.tree.rcm.data = rightClickMenu.tree.rcm
+                if (!isEmpty(rightClickMenu.tree.rcm)) {
+                    this.tree.rcm.data = rightClickMenu.tree.rcm
+                }
                 this.tree.menuSets.data = this.tree.menuSets.data.concat(rightClickMenu.tree.menuSets)
             }
             this.beforeLeave()
@@ -607,7 +687,6 @@ export default {
             }
         },
         drawerClose: function () {
-            this.drawer.rcm.visible = false
             let _this = this
             if (!isEmpty(this.$refs[this.refs.form.menuSet])) {
                 this.$refs[this.refs.form.menuSet].validate(function (valid) {
@@ -618,6 +697,21 @@ export default {
                         return false
                     }
                 })
+            }
+            if (!isEmpty(this.$refs[this.refs.form.rcm])) {
+                this.$refs[this.refs.form.rcm].validate(function (valid) {
+                    if (valid) {
+                        rcmDrawerClose()
+                    } else {
+                        _this.$message.warning('必须填写正确才能下一步操作')
+                        return false
+                    }
+                })
+            } else if (!isEmpty(this.drawer.rcm.nodeObj) && isEmpty(this.drawer.rcm.nodeObj.data.children)) {
+                rcmDrawerClose()
+            }
+            function rcmDrawerClose () {
+                _this.drawer.rcm.visible = false
             }
         },
         handleNodeClick: function (node, nodeObj, treeObj) {
@@ -630,14 +724,19 @@ export default {
                     Vue.set(nodeObj.data, 'extends', {})
                 }
             }
+            // eslint-disable-next-line
+            this.drawer.rcm.originNode = deepCopy(node)
             this.drawer.rcm.visible = true
             nodeObj.expanded = true
 
+            this.getMenuSetsDetail(node)
+        },
+        getMenuSetsDetail: function (node) {
             // 用于获取、展示菜单集中的数据
-            if (isEmpty(node.children) && !isEmpty(node.registry_name)) {
-                let menuSetNodeObj = this.$refs.menuSets.getNode(node.registry_name)
+            if (isEmpty(node.children) && !isEmpty(node.origin_registry_name)) {
+                let menuSetNodeObj = this.$refs[this.refs.tree.menuSets].getNode(node.origin_registry_name)
                 if (!isEmpty(menuSetNodeObj)) {
-                    this.drawer.rcm.tmpData[node.registry_name] = menuSetNodeObj.data
+                    this.drawer.rcm.tmpData[node.origin_registry_name] = menuSetNodeObj.data
                 }
             }
         },
@@ -658,25 +757,7 @@ export default {
             let _this = this
 
             $(window).on('beforeunload', function () {
-                let rightClickMenu = localStorage.rightClickMenu
-
-                if (isEmpty(rightClickMenu)) {
-                    rightClickMenu = {
-                        tree: {
-                            rcm: [],
-                            menuSets: []
-                        }
-                    }
-                } else {
-                    rightClickMenu = JSON.parse(rightClickMenu)
-                }
-
-                rightClickMenu.tree.rcm = _this.tree.rcm.data
-                rightClickMenu.tree.menuSets = _this.tree.menuSets.data.filter(function (val, index) {
-                    return val.registry_name !== 'official'
-                })
-
-                localStorage.rightClickMenu = JSON.stringify(rightClickMenu)
+                _this.saveLocalStore()
             })
         },
         createMenuSet: function () {
@@ -735,6 +816,7 @@ export default {
                     for (let i in nodes) {
                         menuSetsTree.remove(nodes[i])
                     }
+                    this.menuSetCheckChange('', '', '')
                 }
             })
         },
@@ -757,6 +839,58 @@ export default {
                     this.rcmCheckChange('', '', '')
                 }
             })
+        },
+        toggleMenuSet: function () {
+            this.drawer.toggleMenuSet.visible = true
+            // this.drawer.toggleMenuSet.node = this.drawer.rcm.nodeObj.data
+        },
+        toggleMenuSetClose: function () {
+            this.drawer.toggleMenuSet.visible = false
+        },
+        toggleMenuSetDetailClick: function (node) {
+            if (isEmpty(node.children)) {
+                this.drawer.toggleMenuSetDetail.visible = true
+                this.drawer.toggleMenuSetDetail.node = node
+            }
+        },
+        toggleMenuSetDetailClose: function () {
+            this.drawer.toggleMenuSetDetail.visible = false
+        },
+        applyMenuSet: function () {
+            let rcmMenuSetNode = this.drawer.rcm.nodeObj.data
+            let togglemenuSetNode = this.drawer.toggleMenuSetDetail.node
+
+            rcmMenuSetNode.origin_registry_name = togglemenuSetNode.registry_name
+            for (let i in this.drawer.menuSets.form.items) {
+                let key = this.drawer.menuSets.form.items[i]
+                if (key !== 'registry_name') {
+                    rcmMenuSetNode[key] = togglemenuSetNode[key]
+                }
+            }
+            this.getMenuSetsDetail(rcmMenuSetNode)
+            this.drawer.toggleMenuSetDetail.visible = false
+            this.drawer.toggleMenuSet.visible = false
+        },
+        saveLocalStore: function () {
+            let rightClickMenu = localStorage.rightClickMenu
+
+            if (isEmpty(rightClickMenu)) {
+                rightClickMenu = {
+                    tree: {
+                        rcm: [],
+                        menuSets: []
+                    }
+                }
+            } else {
+                rightClickMenu = JSON.parse(rightClickMenu)
+            }
+
+            rightClickMenu.tree.rcm = this.tree.rcm.data
+            rightClickMenu.tree.menuSets = this.tree.menuSets.data.filter(function (val, index) {
+                return val.registry_name !== 'official'
+            })
+
+            localStorage.rightClickMenu = JSON.stringify(rightClickMenu)
         }
     }
 }
