@@ -26,6 +26,11 @@
         </b-navbar>
         <div class="bg-light pt-4 pb-4">
             <router-view/>
+            <footer class="footer mt-2">
+                <div class="container text-right">
+                    Developed By <a href="https://github.com/GHBJayce" target="_blank">GHBJayce</a>.
+                </div>
+            </footer>
         </div>
     </div>
 </template>

@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div class="row">
-            <div class="col-md-7">
+            <div class="col-md-7 mb-3">
                 <b-card title="操作台" bg-variant="white" border-variant="light" class="shadow-sm">
                     <el-tabs v-model="activeName">
                         <el-tab-pane label="右键菜单" name="rcm">
@@ -257,6 +257,31 @@
                 </b-card>
             </div>
             <div class="col-md-5">
+                <el-alert
+                    title="请在本地环境中使用该应用"
+                    type="warning"
+                    class="mb-3 border-bottom"
+                    show-icon>
+                </el-alert>
+                <b-card title="描述" bg-variant="white" border-variant="light" class="shadow-sm">
+                    <div class="mb-3 pt-2">
+                        <a href="https://github.com/GHBJayce/RightClickMenu" target="_blank" class="mr-2 d-inline-block align-top">
+                            <i class="fab fa-github"></i> GHBJayce/RightClickMenu
+                        </a>
+                        <iframe src="https://ghbtns.com/github-btn.html?user=GHBJayce&repo=RightClickMenu&type=star" frameborder="0" scrolling="0" width="55px" height="20px"></iframe>
+                        <iframe src="https://ghbtns.com/github-btn.html?user=GHBJayce&repo=RightClickMenu&type=fork" frameborder="0" scrolling="0" width="55px" height="20px"></iframe>
+                    </div>
+                    <!-- <div class="mb-3">
+                        <img class="mr-2" src="https://img.shields.io/github/stars/GHBJayce/RightClickMenu.svg" alt="stars">
+                        <img class="mr-2" src="https://img.shields.io/github/forks/GHBJayce/RightClickMenu.svg" alt="forks">
+                        <img src="https://img.shields.io/github/license/GHBJayce/RightClickMenu.svg" alt="license">
+                    </div> -->
+                    <p>应用工具，可以将<b>windows</b>程序/命令设置在鼠标的右键菜单上。</p>
+                    <p>能够生成右键菜单的注册表文件（含<b>创建</b>、<b>移除</b>两个文件）。</p>
+                    <p class="mb-0 tips" title="Tips">
+                        <i class="far fa-lightbulb text-warning mr-2 h6 mb-0"></i>{{ nowDescription }}
+                    </p>
+                </b-card>
             </div>
         </div>
     </div>
@@ -491,7 +516,9 @@ export default {
             visible: {
                 removeRcmBtn: false,
                 removeMenuSetBtn: false
-            }
+            },
+            descriptions: ['支持多层右键菜单，但是windows会限制右键菜单的数量', '在你离开页面之前，它会自动保存你在操作台中的数据', '实际右键菜单的显示顺序跟注册表名有关', '应用更好的实现方式应该是直接和系统进行交互，不需要任何环境的依赖，减少用户的麻烦', '这个应用是拿来练习PHP设计模式的实例，为了更好地理解设计模式'],
+            nowDescription: ''
         }
     },
     mounted () {
@@ -503,6 +530,7 @@ export default {
     },
     methods: {
         init: function () {
+            this.getNowDescription()
             this.menuSets()
             let rightClickMenu = localStorage.rightClickMenu
 
@@ -891,7 +919,47 @@ export default {
             })
 
             localStorage.rightClickMenu = JSON.stringify(rightClickMenu)
+        },
+        getNowDescription: function () {
+            this.nowDescription = this.takeTurnsDescriptions()
+
+            setTimeout(() => {
+                this.getNowDescription()
+            }, 7000)
+        },
+        takeTurnsDescriptions: function () {
+            // key = key !== undefined ? key : 0
+
+            // this.nowDescription = this.descriptions[key]
+
+            // setTimeout(() => {
+            //     key++
+            //     key = key > (this.descriptions.length - 1) ? 0 : key
+            //     this.takeTurnsDescriptions(key)
+            // }, 5000)
+
+            let descriptions = this.descriptions
+            let key = generateKey()
+            let lastKey = window.takeTurnsDescriptionKey
+
+            if (lastKey === undefined || lastKey !== key) {
+                window.takeTurnsDescriptionKey = key
+
+                return descriptions[key]
+            }
+
+            function generateKey () {
+                return Math.floor(Math.random() * descriptions.length)
+            }
+
+            return this.takeTurnsDescriptions()
         }
     }
 }
 </script>
+
+<style>
+.tips {
+    color: #e2af50
+}
+</style>
