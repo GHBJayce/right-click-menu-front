@@ -39,7 +39,11 @@
                                     </div>
                                 </el-col>
                             </el-row>
-                            <b-button variant="primary" block class="w-100">生成</b-button>
+                            <b-button
+                                @click="generateRcm"
+                                variant="primary"
+                                block
+                                class="w-100">生成</b-button>
                             <a-drawer
                                 v-if="!JW.isEmpty(drawer.rcm.nodeObj.data)"
                                 :title="drawer.rcm.title"
@@ -870,7 +874,6 @@ export default {
         },
         toggleMenuSet: function () {
             this.drawer.toggleMenuSet.visible = true
-            // this.drawer.toggleMenuSet.node = this.drawer.rcm.nodeObj.data
         },
         toggleMenuSetClose: function () {
             this.drawer.toggleMenuSet.visible = false
@@ -928,16 +931,6 @@ export default {
             }, 7000)
         },
         takeTurnsDescriptions: function () {
-            // key = key !== undefined ? key : 0
-
-            // this.nowDescription = this.descriptions[key]
-
-            // setTimeout(() => {
-            //     key++
-            //     key = key > (this.descriptions.length - 1) ? 0 : key
-            //     this.takeTurnsDescriptions(key)
-            // }, 5000)
-
             let descriptions = this.descriptions
             let key = generateKey()
             let lastKey = window.takeTurnsDescriptionKey
@@ -953,6 +946,27 @@ export default {
             }
 
             return this.takeTurnsDescriptions()
+        },
+        generateRcm: function () {
+            let rcmRef = this.$refs[this.refs.tree.rcm]
+            let checkedList = rcmRef.getCheckedNodes()
+            console.log(checkedList, rcmRef.getHalfCheckedNodes())
+            let tree = {}
+            for (let i in checkedList) {
+                let checkedNode = rcmRef.getNode(checkedList[i])
+                if (checkedNode.level !== 1) {
+                    // checkedNode.parent
+                }
+            }
+
+            function handleNode(node) {
+                let data = {}
+                delete node.data.children
+                data[node.id] = node.data
+                if (node.level !== 1) {
+
+                }
+            }
         }
     }
 }
