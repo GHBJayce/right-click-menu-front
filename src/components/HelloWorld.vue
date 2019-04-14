@@ -950,23 +950,44 @@ export default {
         generateRcm: function () {
             let rcmRef = this.$refs[this.refs.tree.rcm]
             let checkedList = rcmRef.getCheckedNodes()
+            checkedList = checkedList.concat(rcmRef.getHalfCheckedNodes())
             console.log(checkedList, rcmRef.getHalfCheckedNodes())
             let tree = {}
             for (let i in checkedList) {
+                let id = checkedList[i].$treeNodeId
+                let node = tree[id] = checkedList[i]
                 let checkedNode = rcmRef.getNode(checkedList[i])
-                if (checkedNode.level !== 1) {
-                    // checkedNode.parent
+                tree[id].pid = checkedNode.parent.level ? checkedNode.parent.id : 0
+
+                // 验证数据
+                if (isEmpty(node.children)) {
+                    if (isEmpty(node.path)) {
+                        // this.$message.error('必须选用一个菜单：' + node.menu_name)
+                    }
                 }
             }
 
-            function handleNode(node) {
-                let data = {}
-                delete node.data.children
-                data[node.id] = node.data
-                if (node.level !== 1) {
+            let data = test(tree)
+            // 堆栈溢出，让后台处理
+            function test (list, pid, res) {
+                pid = pid === undefined ? 0 : pid
+                res = res || {}
 
+                for (let i in list) {
+                    let node = list[i]
+                    if (node.pid === pid) {
+                        res[node.pid] = node
+                        let children = test(list, node.id)
+                        if (!isEmpty(children)) {
+                            delete res[node.pid].children
+                            res[node.pid].children = children
+                        }
+                    }
                 }
+
+                return res
             }
+            console.log(data)
         }
     }
 }
