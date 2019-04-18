@@ -308,6 +308,9 @@ export default {
                 },
                 path: {
                     text: '程序路径'
+                },
+                origin_registry_name: {
+                    text: '源注册表名'
                 }
             },
             departments: {
@@ -442,8 +445,8 @@ export default {
                     nodeObj: {},
                     rcmKeys: ['registry_name', 'menu_name', 'icon'],
                     menuSet: {
-                        editable: ['menu_name'],
-                        notEditable: ['registry_name', 'path', 'icon']
+                        editable: ['registry_name', 'menu_name', 'icon'],
+                        notEditable: ['path', 'origin_registry_name']
                     },
                     departments: [],
                     extends: {},
@@ -521,7 +524,7 @@ export default {
                 removeRcmBtn: false,
                 removeMenuSetBtn: false
             },
-            descriptions: ['支持多层右键菜单，但是windows会限制右键菜单的数量', '在你离开页面之前，它会自动保存你在操作台中的数据', '实际右键菜单的显示顺序跟注册表名有关', '应用更好的实现方式应该是直接和系统进行交互，不需要任何环境的依赖，减少用户的麻烦', '这个应用是拿来练习PHP设计模式的实例，为了更好地理解设计模式'],
+            descriptions: ['支持多层右键菜单，但是windows会限制右键菜单的数量', '在你离开页面之前，它会自动保存你在操作台中的数据', '实际右键菜单的显示顺序跟注册表名有关', '应用更好的实现方式应该是直接和系统进行交互，不需要任何环境的依赖，减少用户的麻烦', '这个应用是拿来练习PHP设计模式的实例，为了更好地理解设计模式', '最终生成的注册表内容，菜单信息（路径、图标等）中的单引号、双引号和斜杠都会被转义（加上反斜杠）', '对于命令中包含空格的路径，建议用单引号或者双引号包含着路径'],
             nowDescription: ''
         }
     },
@@ -610,37 +613,37 @@ export default {
                     children: [{
                         menu_name: 'MD5',
                         registry_name: 'MD5',
-                        path: 'PowerShell Get-FileHash -Algorithm MD5 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'PowerShell Get-FileHash -Algorithm MD5 \'%1\' | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA1',
                         registry_name: 'SHA1',
-                        path: 'PowerShell Get-FileHash -Algorithm SHA1 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'PowerShell Get-FileHash -Algorithm SHA1 \'%1\' | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA256',
                         registry_name: 'SHA256',
-                        path: 'PowerShell Get-FileHash -Algorithm SHA256 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'PowerShell Get-FileHash -Algorithm SHA256 \'%1\' | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA384',
                         registry_name: 'SHA384',
-                        path: 'PowerShell Get-FileHash -Algorithm SHA384 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'PowerShell Get-FileHash -Algorithm SHA384 \'%1\' | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA512',
                         registry_name: 'SHA512',
-                        path: 'PowerShell Get-FileHash -Algorithm SHA512 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'PowerShell Get-FileHash -Algorithm SHA512 \'%1\' | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'MACTripleDES',
                         registry_name: 'MACTripleDES',
-                        path: 'PowerShell Get-FileHash -Algorithm MACTripleDES "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'PowerShell Get-FileHash -Algorithm MACTripleDES \'%1\' | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }, {
                         menu_name: 'RIPEMD160',
                         registry_name: 'RIPEMD160',
-                        path: 'PowerShell Get-FileHash -Algorithm RIPEMD160 "%1" | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'PowerShell Get-FileHash -Algorithm RIPEMD160 \'%1\' | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
                         icon: ''
                     }]
                 }, {
@@ -654,27 +657,27 @@ export default {
                     children: [{
                         menu_name: 'MD5',
                         registry_name: 'certutil-MD5',
-                        path: 'cmd certutil -hashfile "%1" MD5 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'cmd /k certutil -hashfile "%1" MD5 & pause & exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA1',
                         registry_name: 'certutil-SHA1',
-                        path: 'cmd certutil -hashfile "%1" SHA1 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'cmd /k certutil -hashfile "%1" SHA1 & pause & exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA256',
                         registry_name: 'certutil-SHA256',
-                        path: 'cmd certutil -hashfile "%1" SHA256 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'cmd /k certutil -hashfile "%1" SHA256 & pause & exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA384',
                         registry_name: 'certutil-SHA384',
-                        path: 'cmd certutil -hashfile "%1" SHA384 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'cmd /k certutil -hashfile "%1" SHA384 & pause & exit',
                         icon: ''
                     }, {
                         menu_name: 'SHA512',
                         registry_name: 'certutil-SHA512',
-                        path: 'cmd certutil -hashfile "%1" SHA512 | format-list;“按任意键退出...”;[Console]::Readkey() | Out-Null;exit',
+                        path: 'cmd /k certutil -hashfile "%1" SHA512 & pause & exit',
                         icon: ''
                     }]
                 }]
@@ -768,7 +771,15 @@ export default {
             if (isEmpty(node.children) && !isEmpty(node.origin_registry_name)) {
                 let menuSetNodeObj = this.$refs[this.refs.tree.menuSets].getNode(node.origin_registry_name)
                 if (!isEmpty(menuSetNodeObj)) {
-                    this.drawer.rcm.tmpData[node.origin_registry_name] = menuSetNodeObj.data
+                    let fields = ['menu_name', 'path', 'icon']
+                    let tmp = {}
+                    for (let i in fields) {
+                        let key = fields[i]
+                        tmp[key] = menuSetNodeObj.data[key]
+                        this.drawer.rcm.tmpData[node.origin_registry_name] = tmp
+                    }
+                    this.drawer.rcm.tmpData[node.origin_registry_name].registry_name = node.registry_name
+                    this.drawer.rcm.tmpData[node.origin_registry_name].origin_registry_name = node.origin_registry_name
                 }
             }
         },
@@ -887,16 +898,16 @@ export default {
         toggleMenuSetDetailClose: function () {
             this.drawer.toggleMenuSetDetail.visible = false
         },
+        // 选用菜单
         applyMenuSet: function () {
             let rcmMenuSetNode = this.drawer.rcm.nodeObj.data
             let togglemenuSetNode = this.drawer.toggleMenuSetDetail.node
+            let fields = ['menu_name', 'icon']
 
             rcmMenuSetNode.origin_registry_name = togglemenuSetNode.registry_name
-            for (let i in this.drawer.menuSets.form.items) {
-                let key = this.drawer.menuSets.form.items[i]
-                if (key !== 'registry_name') {
-                    rcmMenuSetNode[key] = togglemenuSetNode[key]
-                }
+            for (let i in fields) {
+                let key = fields[i]
+                rcmMenuSetNode[key] = togglemenuSetNode[key]
             }
             this.getMenuSetsDetail(rcmMenuSetNode)
             this.drawer.toggleMenuSetDetail.visible = false
@@ -924,11 +935,13 @@ export default {
             localStorage.rightClickMenu = JSON.stringify(rightClickMenu)
         },
         getNowDescription: function () {
+            let startTime = window.performance.now()
             this.nowDescription = this.takeTurnsDescriptions()
+            let endTime = window.performance.now()
 
             setTimeout(() => {
                 this.getNowDescription()
-            }, 7000)
+            }, 10000 - (endTime - startTime))
         },
         takeTurnsDescriptions: function () {
             let descriptions = this.descriptions
@@ -947,47 +960,72 @@ export default {
 
             return this.takeTurnsDescriptions()
         },
+        // 请求生成注册表文件
         generateRcm: function () {
+            let report = (msg) => {
+                this.$message.error(msg)
+            }
             let rcmRef = this.$refs[this.refs.tree.rcm]
+            let menuSetsRef = this.$refs[this.refs.tree.menuSets]
             let checkedList = rcmRef.getCheckedNodes()
             checkedList = checkedList.concat(rcmRef.getHalfCheckedNodes())
-            console.log(checkedList, rcmRef.getHalfCheckedNodes())
             let tree = {}
             for (let i in checkedList) {
                 let id = checkedList[i].$treeNodeId
-                let node = tree[id] = checkedList[i]
+                // eslint-disable-next-line
+                let node = tree[id] = deepCopy(checkedList[i])
                 let checkedNode = rcmRef.getNode(checkedList[i])
                 tree[id].pid = checkedNode.parent.level ? checkedNode.parent.id : 0
 
                 // 验证数据
                 if (isEmpty(node.children)) {
+                    let menuSetNode = menuSetsRef.getNode(node.origin_registry_name)
+                    if (!isEmpty(menuSetNode.data)) {
+                        tree[id].path = menuSetNode.data.path
+                    }
                     if (isEmpty(node.path)) {
-                        // this.$message.error('必须选用一个菜单：' + node.menu_name)
+                        report('必须选用一个菜单：' + node.menu_name)
+                        return
                     }
-                }
-            }
-
-            let data = test(tree)
-            // 堆栈溢出，让后台处理
-            function test (list, pid, res) {
-                pid = pid === undefined ? 0 : pid
-                res = res || {}
-
-                for (let i in list) {
-                    let node = list[i]
-                    if (node.pid === pid) {
-                        res[node.pid] = node
-                        let children = test(list, node.id)
-                        if (!isEmpty(children)) {
-                            delete res[node.pid].children
-                            res[node.pid].children = children
+                } else {
+                    if (checkedNode.level === 1) {
+                        if (isEmpty(node.departments)) {
+                            report('必须选择菜单位置：' + node.menu_name)
+                            return
                         }
-                    }
-                }
+                        if (isEmpty(node.extends)) {
+                            report('必须包含extends属性：' + node.menu_name)
+                            return
+                        }
+                        // 整理数据
+                        let extendObj = node.extends
 
-                return res
+                        node.extends = []
+                        for (let k in node.departments) {
+                            node.extends.push(extendObj[node.departments[k]])
+                        }
+                    } else {
+                        delete node.departments
+                    }
+                    // 整理数据
+                    tree[id].children = []
+                    delete node.extends
+                }
+                // 整理数据
+                tree[id].id = id
             }
-            console.log(data)
+
+            $.ajax({
+                url: '/service/',
+                type: 'post',
+                dataType: 'json',
+                data: {
+                    data: JSON.stringify(tree)
+                },
+                success: function (res) {
+                    console.log(res)
+                }
+            })
         }
     }
 }
