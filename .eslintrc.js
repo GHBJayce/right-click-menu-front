@@ -12,7 +12,8 @@ module.exports = {
     '$': false,
     'isEmpty': false,
     'Vue': false,
-    'md5': false
+    'md5': false,
+    'ClipboardJS': false,
   },
   extends: [
     // https://github.com/vuejs/eslint-plugin-vue#priority-a-essential-error-prevention

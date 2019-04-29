@@ -2,7 +2,7 @@
     <div class="container">
         <div class="row">
             <div class="col-md-7 mb-3">
-                <b-card title="操作台" bg-variant="white" border-variant="light" class="shadow-sm">
+                <b-card title="操作台" bg-variant="white" border-variant="light" class="shadow-sm mb-4">
                     <el-tabs v-model="activeName">
                         <el-tab-pane label="右键菜单" name="rcm">
                             <el-row class="mt-2 mb-4">
@@ -287,6 +287,43 @@
                     </p>
                 </b-card>
             </div>
+            <div
+                v-if="generateData.visible"
+                class="col-md-12 mb-4">
+                <b-card
+                    title="生成结果"
+                    bg-variant="white"
+                    border-variant="light"
+                    class="shadow-sm">
+                    <div class="mt-3">
+                        <a :href="'./' + generateData.downloadPath">下载注册表文件</a>
+                    </div>
+                    <el-row :gutter="20" class="mt-3">
+                        <el-col :span="12" class="mb-2">
+                            <h6>创建注册表</h6>
+                            <div class="bg-light p-3 position-relative">
+                                <b-button
+                                    :data-clipboard-text="generateData.create"
+                                    variant="light"
+                                    size="sm"
+                                    class="position-absolute copy-btn create-copy-btn text-secondary">Copy</b-button>
+                                <pre class="code">{{ generateData.create }}</pre>
+                            </div>
+                        </el-col>
+                        <el-col :span="12">
+                            <h6>移除注册表</h6>
+                            <div class="bg-light p-3 position-relative">
+                                <b-button
+                                    :data-clipboard-text="generateData.remove"
+                                    variant="light"
+                                    size="sm"
+                                    class="position-absolute copy-btn remove-copy-btn text-secondary">Copy</b-button>
+                                <pre class="code">{{ generateData.remove }}</pre>
+                            </div>
+                        </el-col>
+                    </el-row>
+                </b-card>
+            </div>
         </div>
     </div>
 </template>
@@ -525,7 +562,13 @@ export default {
                 removeMenuSetBtn: false
             },
             descriptions: ['支持多层右键菜单，但是windows会限制右键菜单的数量', '在你离开页面之前，它会自动保存你在操作台中的数据', '实际右键菜单的显示顺序跟注册表名有关', '应用更好的实现方式应该是直接和系统进行交互，不需要任何环境的依赖，减少用户的麻烦', '这个应用是拿来练习PHP设计模式的实例，为了更好地理解设计模式', '最终生成的注册表内容，菜单信息（路径、图标等）中的单引号、双引号和斜杠都会被转义（加上反斜杠）', '对于命令中包含空格的路径，建议用单引号或者双引号包含着路径'],
-            nowDescription: ''
+            nowDescription: '',
+            generateData: {
+                visible: false,
+                create: '',
+                remove: '',
+                downloadPath: ''
+            }
         }
     },
     mounted () {
@@ -979,6 +1022,10 @@ export default {
 
                 // 验证数据
                 if (isEmpty(node.children)) {
+                    if (isEmpty(node.origin_registry_name)) {
+                        report('必须选用一个菜单：' + node.menu_name)
+                        return
+                    }
                     let menuSetNode = menuSetsRef.getNode(node.origin_registry_name)
                     if (!isEmpty(menuSetNode.data)) {
                         tree[id].path = menuSetNode.data.path
@@ -1022,9 +1069,34 @@ export default {
                 data: {
                     data: JSON.stringify(tree)
                 },
-                success: function (res) {
-                    console.log(res)
+                success: (res) => {
+                    if (res.status === 'success') {
+                        let data = res.data
+                        this.generateData.create = data.create
+                        this.generateData.remove = data.remove
+                        this.generateData.downloadPath = data.path
+                        this.generateData.visible = true
+
+                        if (this.generateData.first === undefined) {
+                            setTimeout(() => {
+                                this.copyHandle('.create-copy-btn')
+                                this.copyHandle('.remove-copy-btn')
+                            }, 300)
+                            this.generateData.first = 1
+                        }
+                    }
                 }
+            })
+        },
+        copyHandle: function (domClass) {
+            let cpbd = new ClipboardJS(domClass)
+            cpbd.on('success', (e) => {
+                e.clearSelection()
+                this.$message.success('copied!')
+            })
+            cpbd.on('error', (e) => {
+                e.clearSelection()
+                this.$message.error('copy fails!')
             })
         }
     }
@@ -1034,5 +1106,21 @@ export default {
 <style>
 .tips {
     color: #e2af50
+}
+pre.code {
+    font-family: 'Consolas';
+    font-size: 12px
+}
+pre.code::-webkit-scrollbar {
+    height: 4px
+}
+pre.code::-webkit-scrollbar-thumb {
+    background-color: #ccc
+}
+pre.code::-webkit-scrollbar-track {
+    background-color: #f1f1f1
+}
+.copy-btn {
+    right: 15px
 }
 </style>
