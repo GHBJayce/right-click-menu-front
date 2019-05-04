@@ -11,7 +11,13 @@ module.exports = {
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
     proxyTable: {
-      '/': 'http://localhost/rightclickmenu',
+      '/service': {
+        target: 'http://localhost/rightclickmenu',
+        changeOrigin: true,
+        pathRewrite: {
+          '^/service': '/service'
+        }
+      }
     },
 
     // Various Dev Server settings
@@ -58,7 +64,7 @@ module.exports = {
      * Source Maps
      */
 
-    productionSourceMap: true,
+    productionSourceMap: false,
     // https://webpack.js.org/configuration/devtool/#production
     devtool: '#source-map',
 

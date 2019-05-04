@@ -2,146 +2,209 @@
     <div class="container">
         <div class="row">
             <div class="col-md-7 mb-3">
-                <b-card title="操作台" bg-variant="white" border-variant="light" class="shadow-sm mb-4">
-                    <el-tabs v-model="activeName">
-                        <el-tab-pane label="右键菜单" name="rcm">
-                            <el-row class="mt-2 mb-4">
-                                <el-col :span="21">
-                                    <el-tree
-                                        :props="tree.props"
-                                        :node-key="tree.id"
-                                        :data="tree.rcm.data"
-                                        :default-expanded-keys="tree.rcm.expandKeys"
-                                        @node-click="handleNodeClick"
-                                        @check-change="rcmCheckChange"
-                                        draggable
-                                        show-checkbox
-                                        ref="rcm">
-                                    </el-tree>
-                                </el-col>
-                                <el-col :span="3">
-                                    <div class="text-right">
-                                        <b-button
-                                            @click="createMenu"
-                                            variant="primary"
-                                            size="sm"
-                                            class="shadow-sm mb-3">
-                                            新增菜单
-                                        </b-button>
-                                        <b-button
-                                            v-if="visible.removeRcmBtn"
-                                            @click="removeRcmNode"
-                                            variant="danger"
-                                            size="sm"
-                                            class="shadow-sm">
-                                            删除菜单
-                                        </b-button>
-                                    </div>
-                                </el-col>
-                            </el-row>
-                            <b-button
-                                @click="generateRcm"
-                                variant="primary"
-                                block
-                                class="w-100">生成</b-button>
-                            <a-drawer
-                                v-if="!JW.isEmpty(drawer.rcm.nodeObj.data)"
-                                :title="drawer.rcm.title"
-                                :placement="drawer.rcm.placement"
-                                :visible="drawer.rcm.visible"
-                                :width="drawer.rcm.width"
-                                @close="drawerClose">
-                                <el-form
-                                    v-if="!JW.isEmpty(drawer.rcm.nodeObj.data.children)"
-                                    :ref="refs.form.rcm"
-                                    :model="drawer.rcm.nodeObj.data"
-                                    :rules="formRules.rcm"
-                                    label-width="80px">
-                                    <el-form-item
-                                        v-for="(v, k) in drawer.rcm.rcmKeys"
-                                        :label="copywirting.fields[v].text"
-                                        :prop="v"
-                                        :key="k">
-                                        <el-input v-model="drawer.rcm.nodeObj.data[v]"></el-input>
-                                    </el-form-item>
-                                    <template v-if="drawer.rcm.nodeObj.level === 1">
-                                        <el-form-item label="菜单位置">
-                                            <el-select
-                                                v-model="drawer.rcm.nodeObj.data.departments"
-                                                multiple
-                                                clearable
-                                                filterable
-                                                class="w-100"
-                                                placeholder="请选择右键菜单的位置"
-                                                @change="departmentSelectChange($event, drawer.rcm.nodeObj.data)">
-                                                <el-option-group
-                                                    v-for="(v, k) in rcmDepartment"
-                                                    :key="k"
-                                                    :label="v.name">
-                                                    <el-option
-                                                        v-for="(vv, kk) in v.options"
-                                                        :key="kk"
-                                                        :label="vv.name"
-                                                        :value="vv.val">
-                                                    </el-option>
-                                                </el-option-group>
-                                            </el-select>
-                                        </el-form-item>
-                                        <el-form-item
-                                            v-for="(v, k) in drawer.rcm.nodeObj.data.departments"
-                                            :key="k"
-                                            :label="'【' + copywirting.departments[v].text + '】按 Shift 键出现'"
-                                            label-width="200">
-                                            <el-radio-group v-model.number="drawer.rcm.nodeObj.data.extends[v]">
-                                                <el-radio :label="0">否</el-radio>
-                                                <el-radio :label="1">是</el-radio>
-                                            </el-radio-group>
-                                        </el-form-item>
-                                    </template>
-                                </el-form>
-                                <el-row v-else>
-                                    <el-col>
-                                        <el-form
-                                            size="small"
-                                            label-width="82px">
-                                            <el-form-item
-                                                v-for="(v, k) in drawer.rcm.menuSet.editable"
-                                                :key="k"
-                                                :label="copywirting.fields[v].text + '：'"
-                                                class="mb-4">
-                                                <el-input v-model="drawer.rcm.nodeObj.data[v]"></el-input>
-                                            </el-form-item>
-                                        </el-form>
-                                    </el-col>
-                                    <el-col
-                                        v-for="(v, k) in drawer.rcm.menuSet.notEditable"
-                                        :key="k"
-                                        :span="24"
-                                        class="mb-4">
-                                        <div class="mr-2 mb-2 float-left">{{ copywirting.fields[v].text }}：</div>
-                                        <div v-if="!JW.isEmpty(drawer.rcm.nodeObj.data.origin_registry_name) && !JW.isEmpty(drawer.rcm.tmpData[drawer.rcm.nodeObj.data.origin_registry_name])">{{ drawer.rcm.tmpData[drawer.rcm.nodeObj.data.origin_registry_name][v] }}</div>
-                                    </el-col>
-                                    <el-col>
-                                        <b-button
-                                            @click="toggleMenuSet"
-                                            block
-                                            variant="primary"
-                                            class="w-100 mt-2">更换菜单</b-button>
-                                    </el-col>
-                                    <a-drawer
-                                        :title="drawer.toggleMenuSet.title"
-                                        :placement="drawer.toggleMenuSet.placement"
-                                        :visible="drawer.toggleMenuSet.visible"
-                                        :width="drawer.toggleMenuSet.width"
-                                        @close="toggleMenuSetClose">
+                <a-skeleton
+                    :loading="loading.console"
+                    active>
+                    <b-card title="操作台" bg-variant="white" border-variant="light" class="shadow-sm mb-4">
+                        <el-tabs v-model="activeName">
+                            <el-tab-pane label="右键菜单" name="rcm">
+                                <el-row class="mt-2 mb-4">
+                                    <el-col :span="21">
                                         <el-tree
-                                            v-if="drawer.toggleMenuSet.visible"
+                                            :props="tree.props"
+                                            :node-key="tree.id"
+                                            :data="tree.rcm.data"
+                                            :default-expanded-keys="tree.rcm.expandKeys"
+                                            @node-click="handleNodeClick"
+                                            @check-change="rcmCheckChange"
+                                            @node-expand="rcmExpand"
+                                            @node-collapse="rcmCollapse"
+                                            draggable
+                                            show-checkbox
+                                            ref="rcm">
+                                        </el-tree>
+                                    </el-col>
+                                    <el-col :span="3">
+                                        <div class="text-right">
+                                            <b-button
+                                                @click="createMenu"
+                                                variant="primary"
+                                                size="sm"
+                                                class="shadow-sm mb-3">
+                                                新增菜单
+                                            </b-button>
+                                            <b-button
+                                                v-if="visible.removeRcmBtn"
+                                                @click="removeRcmNode"
+                                                variant="danger"
+                                                size="sm"
+                                                class="shadow-sm">
+                                                删除菜单
+                                            </b-button>
+                                        </div>
+                                    </el-col>
+                                </el-row>
+                                <b-button
+                                    @click="generateRcm"
+                                    variant="primary"
+                                    block
+                                    class="w-100">生成</b-button>
+                                <a-drawer
+                                    v-if="!JW.isEmpty(drawer.rcm.nodeObj.data)"
+                                    :title="drawer.rcm.title"
+                                    :placement="drawer.rcm.placement"
+                                    :visible="drawer.rcm.visible"
+                                    :width="drawer.rcm.width"
+                                    @close="drawerClose">
+                                    <el-form
+                                        v-if="!JW.isEmpty(drawer.rcm.nodeObj.data.children)"
+                                        :ref="refs.form.rcm"
+                                        :model="drawer.rcm.nodeObj.data"
+                                        :rules="formRules.rcm"
+                                        label-width="80px">
+                                        <el-form-item
+                                            v-for="(v, k) in drawer.rcm.rcmKeys"
+                                            :label="copywirting.fields[v].text"
+                                            :prop="v"
+                                            :key="k">
+                                            <el-input v-model="drawer.rcm.nodeObj.data[v]"></el-input>
+                                        </el-form-item>
+                                        <template v-if="drawer.rcm.nodeObj.level === 1">
+                                            <el-form-item label="菜单位置">
+                                                <el-select
+                                                    v-model="drawer.rcm.nodeObj.data.departments"
+                                                    multiple
+                                                    clearable
+                                                    filterable
+                                                    class="w-100"
+                                                    placeholder="请选择右键菜单的位置"
+                                                    @change="departmentSelectChange($event, drawer.rcm.nodeObj.data)">
+                                                    <el-option-group
+                                                        v-for="(v, k) in rcmDepartment"
+                                                        :key="k"
+                                                        :label="v.name">
+                                                        <el-option
+                                                            v-for="(vv, kk) in v.options"
+                                                            :key="kk"
+                                                            :label="vv.name"
+                                                            :value="vv.val">
+                                                        </el-option>
+                                                    </el-option-group>
+                                                </el-select>
+                                            </el-form-item>
+                                            <el-form-item
+                                                v-for="(v, k) in drawer.rcm.nodeObj.data.departments"
+                                                :key="k"
+                                                :label="'【' + copywirting.departments[v].text + '】按 Shift 键出现'"
+                                                label-width="200">
+                                                <el-radio-group v-model.number="drawer.rcm.nodeObj.data.extends[v]">
+                                                    <el-radio :label="0">否</el-radio>
+                                                    <el-radio :label="1">是</el-radio>
+                                                </el-radio-group>
+                                            </el-form-item>
+                                        </template>
+                                    </el-form>
+                                    <el-row v-else>
+                                        <el-col>
+                                            <el-form
+                                                size="small"
+                                                label-width="82px">
+                                                <el-form-item
+                                                    v-for="(v, k) in drawer.rcm.menuSet.editable"
+                                                    :key="k"
+                                                    :label="copywirting.fields[v].text + '：'"
+                                                    class="mb-4">
+                                                    <el-input v-model="drawer.rcm.nodeObj.data[v]"></el-input>
+                                                </el-form-item>
+                                            </el-form>
+                                        </el-col>
+                                        <el-col
+                                            v-for="(v, k) in drawer.rcm.menuSet.notEditable"
+                                            :key="k"
+                                            :span="24"
+                                            class="mb-4">
+                                            <div class="mr-2 mb-2 float-left">{{ copywirting.fields[v].text }}：</div>
+                                            <div v-if="!JW.isEmpty(drawer.rcm.nodeObj.data.origin_registry_name) && !JW.isEmpty(drawer.rcm.tmpData[drawer.rcm.nodeObj.data.origin_registry_name])">{{ drawer.rcm.tmpData[drawer.rcm.nodeObj.data.origin_registry_name][v] }}</div>
+                                        </el-col>
+                                        <el-col>
+                                            <b-button
+                                                @click="toggleMenuSet"
+                                                block
+                                                variant="primary"
+                                                class="w-100 mt-2">更换菜单</b-button>
+                                        </el-col>
+                                        <a-drawer
+                                            :title="drawer.toggleMenuSet.title"
+                                            :placement="drawer.toggleMenuSet.placement"
+                                            :visible="drawer.toggleMenuSet.visible"
+                                            :width="drawer.toggleMenuSet.width"
+                                            @close="toggleMenuSetClose">
+                                            <el-tree
+                                                v-if="drawer.toggleMenuSet.visible"
+                                                :props="tree.props"
+                                                :node-key="tree.id"
+                                                :data="tree.menuSets.data"
+                                                :default-expanded-keys="tree.menuSets.expandKeys"
+                                                @node-click="toggleMenuSetDetailClick"
+                                                :ref="refs.tree.toggleMenuSet">
+                                                <span slot-scope="{ node, data }">
+                                                    <span>{{ node.label }}</span>
+                                                    <span v-if="!JW.isEmpty(data.labels)">
+                                                        <b-badge
+                                                            v-for="(v, k) in data.labels"
+                                                            :key="k"
+                                                            variant="primary"
+                                                            class="ml-1"
+                                                            :title="title">{{ v.text }}</b-badge>
+                                                    </span>
+                                                </span>
+                                            </el-tree>
+                                            <a-drawer
+                                                :title="drawer.toggleMenuSetDetail.title"
+                                                :placement="drawer.toggleMenuSetDetail.placement"
+                                                :visible="drawer.toggleMenuSetDetail.visible"
+                                                :width="drawer.toggleMenuSetDetail.width"
+                                                @close="toggleMenuSetDetailClose">
+                                                <el-row>
+                                                    <el-col
+                                                        v-for="(v, k) in drawer.menuSets.form.items"
+                                                        :key="k"
+                                                        :span="24"
+                                                        class="mb-4">
+                                                        <div class="mb-2 float-left">{{ copywirting.fields[v].text }}：</div>
+                                                        <div>{{ drawer.toggleMenuSetDetail.node[v] }}</div>
+                                                    </el-col>
+                                                    <el-col>
+                                                        <b-button
+                                                            @click="applyMenuSet"
+                                                            variant="primary"
+                                                            class="w-100"
+                                                            block>选用</b-button>
+                                                    </el-col>
+                                                </el-row>
+                                            </a-drawer>
+                                        </a-drawer>
+                                    </el-row>
+                                </a-drawer>
+                            </el-tab-pane>
+                            <el-tab-pane label="菜单集" name="menuSets">
+                                <el-row class="mt-2 mb-4">
+                                    <el-col :span="21">
+                                        <el-tree
                                             :props="tree.props"
                                             :node-key="tree.id"
                                             :data="tree.menuSets.data"
                                             :default-expanded-keys="tree.menuSets.expandKeys"
-                                            @node-click="toggleMenuSetDetailClick"
-                                            :ref="refs.tree.toggleMenuSet">
+                                            :allow-drag="menuSetsAllowDrag"
+                                            :allow-drop="menuSetAllowDrop"
+                                            :ref="refs.tree.menuSets"
+                                            @node-click="menuSetsClick"
+                                            @node-drop="menuSetNodeDrop"
+                                            @check-change="menuSetCheckChange"
+                                            @node-expand="menuSetsExpand"
+                                            @node-collapse="menuSetsCollapse"
+                                            draggable
+                                            show-checkbox>
                                             <span slot-scope="{ node, data }">
                                                 <span>{{ node.label }}</span>
                                                 <span v-if="!JW.isEmpty(data.labels)">
@@ -154,111 +217,56 @@
                                                 </span>
                                             </span>
                                         </el-tree>
-                                        <a-drawer
-                                            :title="drawer.toggleMenuSetDetail.title"
-                                            :placement="drawer.toggleMenuSetDetail.placement"
-                                            :visible="drawer.toggleMenuSetDetail.visible"
-                                            :width="drawer.toggleMenuSetDetail.width"
-                                            @close="toggleMenuSetDetailClose">
-                                            <el-row>
-                                                <el-col
-                                                    v-for="(v, k) in drawer.menuSets.form.items"
-                                                    :key="k"
-                                                    :span="24"
-                                                    class="mb-4">
-                                                    <div class="mb-2 float-left">{{ copywirting.fields[v].text }}：</div>
-                                                    <div>{{ drawer.toggleMenuSetDetail.node[v] }}</div>
-                                                </el-col>
-                                                <el-col>
-                                                    <b-button
-                                                        @click="applyMenuSet"
-                                                        variant="primary"
-                                                        class="w-100"
-                                                        block>选用</b-button>
-                                                </el-col>
-                                            </el-row>
-                                        </a-drawer>
-                                    </a-drawer>
+                                    </el-col>
+                                    <el-col :span="3">
+                                        <div class="text-right">
+                                            <b-button
+                                                @click="createMenuSet"
+                                                variant="primary"
+                                                size="sm"
+                                                class="shadow-sm mb-3">
+                                                新增菜单
+                                            </b-button>
+                                            <b-button
+                                                v-if="visible.removeMenuSetBtn"
+                                                @click="removeMenuSetNode"
+                                                variant="danger"
+                                                size="sm"
+                                                class="shadow-sm">
+                                                删除菜单
+                                            </b-button>
+                                        </div>
+                                    </el-col>
                                 </el-row>
-                            </a-drawer>
-                        </el-tab-pane>
-                        <el-tab-pane label="菜单集" name="menuSets">
-                            <el-row class="mt-2 mb-4">
-                                <el-col :span="21">
-                                    <el-tree
-                                        :props="tree.props"
-                                        :node-key="tree.id"
-                                        :data="tree.menuSets.data"
-                                        :default-expanded-keys="tree.menuSets.expandKeys"
-                                        :allow-drag="menuSetsAllowDrag"
-                                        :allow-drop="menuSetAllowDrop"
-                                        :ref="refs.tree.menuSets"
-                                        @node-click="menuSetsClick"
-                                        @node-drop="menuSetNodeDrop"
-                                        @check-change="menuSetCheckChange"
-                                        draggable
-                                        show-checkbox>
-                                        <span slot-scope="{ node, data }">
-                                            <span>{{ node.label }}</span>
-                                            <span v-if="!JW.isEmpty(data.labels)">
-                                                <b-badge
-                                                    v-for="(v, k) in data.labels"
-                                                    :key="k"
-                                                    variant="primary"
-                                                    class="ml-1"
-                                                    :title="title">{{ v.text }}</b-badge>
-                                            </span>
-                                        </span>
-                                    </el-tree>
-                                </el-col>
-                                <el-col :span="3">
-                                    <div class="text-right">
-                                        <b-button
-                                            @click="createMenuSet"
-                                            variant="primary"
-                                            size="sm"
-                                            class="shadow-sm mb-3">
-                                            新增菜单
-                                        </b-button>
-                                        <b-button
-                                            v-if="visible.removeMenuSetBtn"
-                                            @click="removeMenuSetNode"
-                                            variant="danger"
-                                            size="sm"
-                                            class="shadow-sm">
-                                            删除菜单
-                                        </b-button>
-                                    </div>
-                                </el-col>
-                            </el-row>
-                        </el-tab-pane>
-                    </el-tabs>
-                    <a-drawer
-                        :title="drawer.menuSets.title"
-                        :placement="drawer.menuSets.placement"
-                        :visible="drawer.menuSets.visible"
-                        :width="drawer.menuSets.width"
-                        @close="drawerClose"
-                    >
-                        <el-form
-                            :ref="refs.form.menuSet"
-                            :label-position="drawer.menuSets.form.label.placement"
-                            :label-width="drawer.menuSets.form.label.width"
-                            :model="drawer.menuSets.node"
-                            :rules="formRules.menuSet">
-                            <el-form-item
-                                v-for="(v, k) in drawer.menuSets.form.items"
-                                :key="k"
-                                :label="copywirting.fields[v].text"
-                                :prop="v">
-                                <el-input
-                                    v-model="drawer.menuSets.node[v]"
-                                    :disabled="drawer.menuSets.node.disabled === true"
-                                    @blur="menuSetBlur(drawer.menuSets.node, v)"></el-input>
-                            </el-form-item>
-                        </el-form>
-                    </a-drawer>
-                </b-card>
+                            </el-tab-pane>
+                        </el-tabs>
+                        <a-drawer
+                            :title="drawer.menuSets.title"
+                            :placement="drawer.menuSets.placement"
+                            :visible="drawer.menuSets.visible"
+                            :width="drawer.menuSets.width"
+                            @close="drawerClose"
+                        >
+                            <el-form
+                                :ref="refs.form.menuSet"
+                                :label-position="drawer.menuSets.form.label.placement"
+                                :label-width="drawer.menuSets.form.label.width"
+                                :model="drawer.menuSets.node"
+                                :rules="formRules.menuSet">
+                                <el-form-item
+                                    v-for="(v, k) in drawer.menuSets.form.items"
+                                    :key="k"
+                                    :label="copywirting.fields[v].text"
+                                    :prop="v">
+                                    <el-input
+                                        v-model="drawer.menuSets.node[v]"
+                                        :disabled="drawer.menuSets.node.disabled === true"
+                                        @blur="menuSetBlur(drawer.menuSets.node, v)"></el-input>
+                                </el-form-item>
+                            </el-form>
+                        </a-drawer>
+                    </b-card>
+                </a-skeleton>
             </div>
             <div class="col-md-5">
                 <el-alert
@@ -267,68 +275,76 @@
                     class="mb-3 border-bottom"
                     show-icon>
                 </el-alert>
-                <b-card title="描述" bg-variant="white" border-variant="light" class="shadow-sm">
-                    <div class="mb-3 pt-2">
-                        <a href="https://github.com/GHBJayce/RightClickMenu" target="_blank" class="mr-2 d-inline-block align-top">
-                            <i class="fab fa-github"></i> GHBJayce/RightClickMenu
-                        </a>
-                        <iframe src="https://ghbtns.com/github-btn.html?user=GHBJayce&repo=RightClickMenu&type=star" frameborder="0" scrolling="0" width="55px" height="20px"></iframe>
-                        <iframe src="https://ghbtns.com/github-btn.html?user=GHBJayce&repo=RightClickMenu&type=fork" frameborder="0" scrolling="0" width="55px" height="20px"></iframe>
-                    </div>
-                    <!-- <div class="mb-3">
-                        <img class="mr-2" src="https://img.shields.io/github/stars/GHBJayce/RightClickMenu.svg" alt="stars">
-                        <img class="mr-2" src="https://img.shields.io/github/forks/GHBJayce/RightClickMenu.svg" alt="forks">
-                        <img src="https://img.shields.io/github/license/GHBJayce/RightClickMenu.svg" alt="license">
-                    </div> -->
-                    <p>应用工具，可以将<b>windows</b>程序/命令设置在鼠标的右键菜单上。</p>
-                    <p>能够生成右键菜单的注册表文件（含<b>创建</b>、<b>移除</b>两个文件）。</p>
-                    <p class="mb-0 tips" title="Tips">
-                        <i class="far fa-lightbulb text-warning mr-2 h6 mb-0"></i>{{ nowDescription }}
-                    </p>
-                </b-card>
+                <a-skeleton
+                    :loading="loading.descriptions"
+                    active>
+                    <b-card title="描述" bg-variant="white" border-variant="light" class="shadow-sm">
+                        <div class="mb-3 pt-2">
+                            <a href="https://github.com/GHBJayce/RightClickMenu" target="_blank" class="mr-2 d-inline-block align-top">
+                                <i class="fab fa-github"></i> GHBJayce/RightClickMenu
+                            </a>
+                            <iframe src="https://ghbtns.com/github-btn.html?user=GHBJayce&repo=RightClickMenu&type=star" frameborder="0" scrolling="0" width="55px" height="20px"></iframe>
+                            <iframe src="https://ghbtns.com/github-btn.html?user=GHBJayce&repo=RightClickMenu&type=fork" frameborder="0" scrolling="0" width="55px" height="20px"></iframe>
+                        </div>
+                        <!-- <div class="mb-3">
+                            <img class="mr-2" src="https://img.shields.io/github/stars/GHBJayce/RightClickMenu.svg" alt="stars">
+                            <img class="mr-2" src="https://img.shields.io/github/forks/GHBJayce/RightClickMenu.svg" alt="forks">
+                            <img src="https://img.shields.io/github/license/GHBJayce/RightClickMenu.svg" alt="license">
+                        </div> -->
+                        <p>应用工具，可以将<b>windows</b>程序/命令设置在鼠标的右键菜单上。</p>
+                        <p>能够生成右键菜单的注册表文件（含<b>创建</b>、<b>移除</b>两个文件）。</p>
+                        <p class="mb-0 tips" title="Tips">
+                            <i class="far fa-lightbulb text-warning mr-2 h6 mb-0"></i>{{ nowDescription }}
+                        </p>
+                    </b-card>
+                </a-skeleton>
             </div>
-            <div
-                v-if="generateData.visible"
-                class="col-md-12 mb-4">
-                <b-card
-                    title="生成结果"
-                    bg-variant="white"
-                    border-variant="light"
-                    class="shadow-sm">
-                    <div class="mt-3">
-                        <a :href="'./' + generateData.downloadPath">下载注册表文件</a>
-                    </div>
-                    <el-row :gutter="20" class="mt-3">
-                        <el-col :span="12" class="mb-2">
-                            <h6>创建注册表</h6>
-                            <div class="bg-light p-3 position-relative">
-                                <b-button
-                                    :data-clipboard-text="generateData.create"
-                                    variant="light"
-                                    size="sm"
-                                    class="position-absolute copy-btn create-copy-btn text-secondary">Copy</b-button>
-                                <pre class="code">{{ generateData.create }}</pre>
-                            </div>
-                        </el-col>
-                        <el-col :span="12">
-                            <h6>移除注册表</h6>
-                            <div class="bg-light p-3 position-relative">
-                                <b-button
-                                    :data-clipboard-text="generateData.remove"
-                                    variant="light"
-                                    size="sm"
-                                    class="position-absolute copy-btn remove-copy-btn text-secondary">Copy</b-button>
-                                <pre class="code">{{ generateData.remove }}</pre>
-                            </div>
-                        </el-col>
-                    </el-row>
-                </b-card>
+            <div class="col-md-12 mb-4">
+                <a-skeleton
+                    :loading="loading.generate"
+                    active>
+                    <b-card
+                        v-if="generateData.visible"
+                        title="生成结果"
+                        bg-variant="white"
+                        border-variant="light"
+                        class="shadow-sm">
+                        <div class="mt-3">
+                            <a :href="'./' + generateData.downloadPath" download>下载注册表文件</a>
+                        </div>
+                        <el-row :gutter="20" class="mt-3">
+                            <el-col :span="12" class="mb-2">
+                                <h6>创建注册表</h6>
+                                <div class="bg-light p-3 position-relative">
+                                    <b-button
+                                        :data-clipboard-text="generateData.create"
+                                        variant="light"
+                                        size="sm"
+                                        class="position-absolute copy-btn create-copy-btn text-secondary">Copy</b-button>
+                                    <pre class="code">{{ generateData.create }}</pre>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <h6>移除注册表</h6>
+                                <div class="bg-light p-3 position-relative">
+                                    <b-button
+                                        :data-clipboard-text="generateData.remove"
+                                        variant="light"
+                                        size="sm"
+                                        class="position-absolute copy-btn remove-copy-btn text-secondary">Copy</b-button>
+                                    <pre class="code">{{ generateData.remove }}</pre>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </b-card>
+                </a-skeleton>
             </div>
         </div>
     </div>
 </template>
 
 <script>
+const root = process.env.API_ROOT
 export default {
     name: 'HelloWorld',
     data () {
@@ -459,12 +475,17 @@ export default {
                     data: [{
                         registry_name: 'my-right-click-menu',
                         menu_name: '我的右键菜单',
-                        icon: 'i am icon',
+                        icon: '',
                         children: [{
                             menu_name: '复制目标路径',
                             registry_name: 'copy-target-path',
                             origin_registry_name: 'copy-target-path'
-                        }]
+                        }],
+                        departments: [1, 4],
+                        extends: {
+                            1: 0,
+                            4: 0
+                        }
                     }],
                     expandKeys: ['my-right-click-menu']
                 },
@@ -561,13 +582,18 @@ export default {
                 removeRcmBtn: false,
                 removeMenuSetBtn: false
             },
-            descriptions: ['支持多层右键菜单，但是windows会限制右键菜单的数量', '在你离开页面之前，它会自动保存你在操作台中的数据', '实际右键菜单的显示顺序跟注册表名有关', '应用更好的实现方式应该是直接和系统进行交互，不需要任何环境的依赖，减少用户的麻烦', '这个应用是拿来练习PHP设计模式的实例，为了更好地理解设计模式', '最终生成的注册表内容，菜单信息（路径、图标等）中的单引号、双引号和斜杠都会被转义（加上反斜杠）', '对于命令中包含空格的路径，建议用单引号或者双引号包含着路径'],
+            descriptions: ['支持多层右键菜单，但是windows会限制右键菜单的数量（层级菜单的数量加起来不能超过16个，不包括首层菜单，超过的菜单会被隐藏起来）', '在你离开页面之前，它会自动保存你在操作台中的数据', '实际右键菜单的显示顺序跟注册表名有关，排名：数字 > 字母', '应用更好的实现方式应该是直接和系统进行交互，不需要任何环境的依赖，减少用户的麻烦', '这个应用是拿来练习PHP设计模式的实例，为了更好地理解设计模式', '最终生成的注册表文件，其中菜单信息（路径、图标等）中的双引号、反斜杠会被转义（加上反斜杠）', '对于命令中包含空格的路径，建议用单引号或者双引号包含着路径'],
             nowDescription: '',
             generateData: {
                 visible: false,
                 create: '',
                 remove: '',
                 downloadPath: ''
+            },
+            loading: {
+                generate: false,
+                console: true,
+                descriptions: true
             }
         }
     },
@@ -580,16 +606,22 @@ export default {
     },
     methods: {
         init: function () {
+            this.loading.console = false
+            this.loading.descriptions = false
+
             this.getNowDescription()
             this.menuSets()
             let rightClickMenu = localStorage.rightClickMenu
 
             if (!isEmpty(rightClickMenu)) {
                 rightClickMenu = JSON.parse(rightClickMenu)
-                if (!isEmpty(rightClickMenu.tree.rcm)) {
-                    this.tree.rcm.data = rightClickMenu.tree.rcm
+                this.tree.rcm.data = rightClickMenu.tree.rcm.data
+                this.tree.rcm.expandKeys = rightClickMenu.tree.rcm.expandKeys
+                this.tree.menuSets.data = this.tree.menuSets.data.concat(rightClickMenu.tree.menuSets.data)
+                this.tree.menuSets.expandKeys = rightClickMenu.tree.menuSets.expandKeys
+                if (!isEmpty(rightClickMenu.consoleTabActiveName)) {
+                    this.activeName = rightClickMenu.consoleTabActiveName
                 }
-                this.tree.menuSets.data = this.tree.menuSets.data.concat(rightClickMenu.tree.menuSets)
             }
             this.beforeLeave()
         },
@@ -962,18 +994,28 @@ export default {
             if (isEmpty(rightClickMenu)) {
                 rightClickMenu = {
                     tree: {
-                        rcm: [],
-                        menuSets: []
-                    }
+                        rcm: {
+                            data: [],
+                            expandKeys: this.tree.rcm.expandKeys
+                        },
+                        menuSets: {
+                            data: [],
+                            expandKeys: this.tree.menuSets.expandKeys
+                        }
+                    },
+                    consoleTabActiveName: this.activeName
                 }
             } else {
                 rightClickMenu = JSON.parse(rightClickMenu)
             }
 
-            rightClickMenu.tree.rcm = this.tree.rcm.data
-            rightClickMenu.tree.menuSets = this.tree.menuSets.data.filter(function (val, index) {
+            rightClickMenu.tree.rcm.data = this.tree.rcm.data
+            rightClickMenu.tree.rcm.expandKeys = this.tree.rcm.expandKeys
+            rightClickMenu.tree.menuSets.data = this.tree.menuSets.data.filter(function (val, index) {
                 return val.registry_name !== 'official'
             })
+            rightClickMenu.tree.menuSets.expandKeys = this.tree.menuSets.expandKeys
+            rightClickMenu.consoleTabActiveName = this.activeName
 
             localStorage.rightClickMenu = JSON.stringify(rightClickMenu)
         },
@@ -1007,17 +1049,24 @@ export default {
         generateRcm: function () {
             let report = (msg) => {
                 this.$message.error(msg)
+                this.generateData.visible = false
             }
             let rcmRef = this.$refs[this.refs.tree.rcm]
             let menuSetsRef = this.$refs[this.refs.tree.menuSets]
             let checkedList = rcmRef.getCheckedNodes()
             checkedList = checkedList.concat(rcmRef.getHalfCheckedNodes())
             let tree = {}
+
+            if (isEmpty(checkedList)) {
+                report('没有选中任何的菜单')
+                return
+            }
+
             for (let i in checkedList) {
-                let id = checkedList[i].$treeNodeId
+                let checkedNode = rcmRef.getNode(checkedList[i])
+                let id = checkedNode.id
                 // eslint-disable-next-line
                 let node = tree[id] = deepCopy(checkedList[i])
-                let checkedNode = rcmRef.getNode(checkedList[i])
                 tree[id].pid = checkedNode.parent.level ? checkedNode.parent.id : 0
 
                 // 验证数据
@@ -1062,8 +1111,11 @@ export default {
                 tree[id].id = id
             }
 
+            this.generateData.visible = true
+            this.loading.generate = true
+
             $.ajax({
-                url: '/service/',
+                url: root + '/service/',
                 type: 'post',
                 dataType: 'json',
                 data: {
@@ -1071,11 +1123,12 @@ export default {
                 },
                 success: (res) => {
                     if (res.status === 'success') {
+                        this.loading.generate = false
+
                         let data = res.data
                         this.generateData.create = data.create
                         this.generateData.remove = data.remove
                         this.generateData.downloadPath = data.path
-                        this.generateData.visible = true
 
                         if (this.generateData.first === undefined) {
                             setTimeout(() => {
@@ -1084,7 +1137,14 @@ export default {
                             }, 300)
                             this.generateData.first = 1
                         }
+                    } else {
+                        this.generateData.visible = false
+                        this.$message.error(res.message)
                     }
+                },
+                error: () => {
+                    this.generateData.visible = false
+                    this.$message.error('请求错误')
                 }
             })
         },
@@ -1098,6 +1158,36 @@ export default {
                 e.clearSelection()
                 this.$message.error('copy fails!')
             })
+        },
+        rcmExpand: function (node, nodeData, dom) {
+            let registryName = node.registry_name
+            let expandKeys = this.tree.rcm.expandKeys
+            if (expandKeys.indexOf(registryName) === -1) {
+                expandKeys.push(registryName)
+            }
+        },
+        rcmCollapse: function (node, nodeData, dom) {
+            let registryName = node.registry_name
+            let expandKeys = this.tree.rcm.expandKeys
+            let index = expandKeys.indexOf(registryName)
+            if (index !== -1) {
+                expandKeys.splice(index, 1)
+            }
+        },
+        menuSetsExpand: function (node, nodeData, dom) {
+            let registryName = node.registry_name
+            let expandKeys = this.tree.menuSets.expandKeys
+            if (expandKeys.indexOf(registryName) === -1) {
+                expandKeys.push(registryName)
+            }
+        },
+        menuSetsCollapse: function (node, nodeData, dom) {
+            let registryName = node.registry_name
+            let expandKeys = this.tree.menuSets.expandKeys
+            let index = expandKeys.indexOf(registryName)
+            if (index !== -1) {
+                expandKeys.splice(index, 1)
+            }
         }
     }
 }
