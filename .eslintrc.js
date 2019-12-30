@@ -14,6 +14,7 @@ module.exports = {
     'Vue': false,
     'md5': false,
     'ClipboardJS': false,
+    'j-weapons': false,
   },
   extends: [
     // https://github.com/vuejs/eslint-plugin-vue#priority-a-essential-error-prevention
